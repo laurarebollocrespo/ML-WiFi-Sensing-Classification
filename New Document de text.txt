@@ -1,0 +1,1 @@
+esborrar sseq_cntrl
