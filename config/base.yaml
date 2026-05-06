@@ -1,0 +1,13 @@
+data:
+  train_path: "data/raw/train_nt.csv"
+  test_path: "data/raw/test_nolabels_nt.csv"
+  separator: ";"
+  random_seed: 42
+  val_split: 0.2
+
+preprocessing:
+  keep_raw_iq: false
+
+logging:
+  log_dir: "logs"
+  level: "INFO"

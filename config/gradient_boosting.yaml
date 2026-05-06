@@ -1,0 +1,21 @@
+model: gradient_boosting
+run_name: gradient_boosting_search
+
+model_params:
+  random_state: 42
+
+search: grid
+param_grid:
+  n_estimators: [100, 200]
+  learning_rate: [0.03, 0.05, 0.1]
+  max_depth: [2, 3]
+  subsample: [0.8, 1.0]
+
+cv_folds: 5
+scoring: f1_macro
+save_dir: outputs/gradient_boosting
+random_seed: 42
+
+wandb:
+  use: true
+  project: wifi-sensing-aa1

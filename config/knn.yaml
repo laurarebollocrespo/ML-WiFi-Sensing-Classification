@@ -1,0 +1,19 @@
+model: knn
+run_name: knn_search
+
+model_params: {}
+
+search: grid
+param_grid:
+  n_neighbors: [3, 5, 7, 11]
+  weights: ["uniform", "distance"]
+  p: [1, 2]
+
+cv_folds: 5
+scoring: f1_macro
+save_dir: outputs/knn
+random_seed: 42
+
+wandb:
+  use: true
+  project: wifi-sensing-aa1

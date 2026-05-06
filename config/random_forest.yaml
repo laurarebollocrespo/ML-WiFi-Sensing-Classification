@@ -1,0 +1,22 @@
+model: random_forest
+run_name: random_forest_baseline
+
+model_params:
+  random_state: 42
+  n_jobs: -1
+
+search: grid
+param_grid:
+  n_estimators: [200, 400]
+  max_depth: [null, 20, 30]
+  min_samples_split: [2, 6]
+  min_samples_leaf: [1, 2]
+
+cv_folds: 5
+scoring: f1_macro
+save_dir: outputs/random_forest
+random_seed: 42
+
+wandb:
+  use: true
+  project: wifi-sensing-aa1

@@ -1,0 +1,21 @@
+model: svm_rbf
+run_name: svm_rbf_search
+
+model_params:
+  kernel: rbf
+  probability: false
+
+search: random
+n_iter: 16
+param_grid:
+  C: [0.1, 1, 5, 10, 25, 50]
+  gamma: ["scale", "auto", 0.01, 0.05, 0.1]
+
+cv_folds: 5
+scoring: f1_macro
+save_dir: outputs/svm_rbf
+random_seed: 42
+
+wandb:
+  use: true
+  project: wifi-sensing-aa1
