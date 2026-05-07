@@ -1,7 +1,7 @@
 '''
 # src/preprocessing.py
 '''
-
+from sklearn.preprocessing import StandardScaler
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
@@ -39,3 +39,23 @@ def load_test_data(filepath: str) -> pd.DataFrame:
         df = df.drop(columns=["seq_ctrl"])
         
     return df
+
+
+def scale_data(X: pd.DataFrame, scaler: StandardScaler = None) -> tuple[pd.DataFrame, StandardScaler]:
+    """
+    Scales the features. 
+    If scaler is None, it fits a new scaler (used for training data).
+    If a scaler is provided, it only transforms (used for validation/test data).
+    """
+    print("Applying StandardScaler...")
+    if scaler is None:
+        scaler = StandardScaler()
+        # Fit and transform training data
+        X_scaled = scaler.fit_transform(X)
+    else:
+        # Transform unseen data without fitting
+        X_scaled = scaler.transform(X)
+        
+    X_scaled_df = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
+    
+    return X_scaled_df, scaler

@@ -6,7 +6,7 @@ from sklearn.base import BaseEstimator
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.ensemble import RandomForestClassifier
 import yaml
-from src.preprocessing import load_and_split_data
+from src.preprocessing import load_and_split_data, load_test_data, scale_data
 from src.training import MLTrainer
 
 MODEL_REGISTRY = {
@@ -53,7 +53,8 @@ def run_training(config_path: str) -> None:
         model=model,
         param_grid=config["param_grid"],
         cv_folds=config["cv_folds"],
-        scoring=config["scoring"]
+        scoring=config["scoring"],
+        data=config["data_path"]
     )
 
     trainer.fit_and_search(X_train, y_train)

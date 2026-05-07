@@ -18,6 +18,7 @@ class MLTrainer:
     param_grid: dict[str, list]
     cv_folds: int
     scoring: str
+    data: str
 
     best_model: BaseEstimator | None
     best_params: dict
@@ -25,7 +26,7 @@ class MLTrainer:
 
     experiment_results: dict
 
-    def __init__(self, model: BaseEstimator, param_grid: dict[str, list], cv_folds: int, scoring: str) -> None:
+    def __init__(self, model: BaseEstimator, param_grid: dict[str, list], cv_folds: int, scoring: str, data: str) -> None:
         '''
         Initializes the trainer with the model, hyperparameter grid, CV settings, and scoring metric.
         Args:
@@ -38,6 +39,7 @@ class MLTrainer:
         self.param_grid = param_grid
         self.cv_folds = cv_folds
         self.scoring = scoring
+        self.data = data
 
         self.best_model = None
         self.best_params = {}
@@ -135,8 +137,9 @@ class MLTrainer:
         param_string = "_".join([f"{k}-{str(v)}" for k, v in params.items()])
         metric_string = f"f1-{metrics['f1_macro']:.4f}"
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        data_used = self.data
 
-        return f"{model_name}__{param_string}__{metric_string}__{timestamp}"
+        return f"{model_name}__{param_string}__{metric_string}__{data_used}__{timestamp}"
      
     def save(self) -> None:
         """
