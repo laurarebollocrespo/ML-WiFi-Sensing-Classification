@@ -1,6 +1,6 @@
 # Data settings
 data_path: "data/raw/train_nt.csv"
-test_data_path: "data/raw/test_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
 target_col: "position"
 test_size: 0.2
 
@@ -11,5 +11,5 @@ scoring: "f1_macro"
 
 # Hyperparameter Search Space
 param_grid:
-  classifier__solver: ['lsqr']
-  classifier__shrinkage: [null, 'auto', 0.1, 0.5, 0.9]
+  solver: ['lsqr']
+  shrinkage: [null, 'auto', 0.1, 0.5, 0.9]

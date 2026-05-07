@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from scipy import stats
 from sklearn.neighbors import LocalOutlierFactor
 import os
 
@@ -51,6 +52,16 @@ def add_features(df):
     # Phase difference or something, but keep simple
     return df
 
+def apply_box_cox(df) -> pd.DataFrame:
+    """Apply Box-Cox transformation to skewed features."""
+    for col in df.columns:
+        if df[col].dtype in ['int64', 'float64']:
+            if (df[col] <= 0).any():
+                continue  # Box-Cox requires positive values
+            df[col], _ = stats.boxcox(df[col])
+    return df
+
+
 def process_datasets():
     """Process and export different versions of the datasets."""
     raw_dir = 'data/raw'
@@ -88,6 +99,30 @@ def process_datasets():
     test_feat = add_features(test.copy())
     train_feat.to_csv(os.path.join(processed_dir, 'train_features.csv'), sep=';', index=False)
     test_feat.to_csv(os.path.join(processed_dir, 'test_features.csv'), sep=';', index=False)
+
+    # 5. With Box-Cox transformation
+    train_boxcox = apply_box_cox(train.copy())
+    test_boxcox = apply_box_cox(test.copy())
+    train_boxcox.to_csv(os.path.join(processed_dir, 'train_boxcox.csv'), sep=';', index=False)
+    test_boxcox.to_csv(os.path.join(processed_dir, 'test_boxcox.csv'), sep=';', index=False)
+
+    # 6. IQR outliers removed + Box-Cox
+    train_iqr_boxcox = apply_box_cox(remove_outliers_iqr(train.copy(), feature_cols))
+    test_iqr_boxcox = apply_box_cox(remove_outliers_iqr(test.copy(), feature_cols))
+    train_iqr_boxcox.to_csv(os.path.join(processed_dir, 'train_iqr_boxcox.csv'), sep=';', index=False)
+    test_iqr_boxcox.to_csv(os.path.join(processed_dir, 'test_iqr_boxcox.csv'), sep=';', index=False)
+
+    # 7. LOF outliers removed + Box-Cox
+    train_lof_boxcox = apply_box_cox(remove_outliers_lof(train.copy(), feature_cols))
+    test_lof_boxcox = apply_box_cox(remove_outliers_lof(test.copy(), feature_cols))
+    train_lof_boxcox.to_csv(os.path.join(processed_dir, 'train_lof_boxcox.csv'), sep=';', index=False)
+    test_lof_boxcox.to_csv(os.path.join(processed_dir, 'test_lof_boxcox.csv'), sep=';', index=False)
+
+    # 8. With new features + Box-Cox
+    train_feat_boxcox = apply_box_cox(add_features(train.copy()))
+    test_feat_boxcox = apply_box_cox(add_features(test.copy()))
+    train_feat_boxcox.to_csv(os.path.join(processed_dir, 'train_features_boxcox.csv'), sep=';', index=False)
+    test_feat_boxcox.to_csv(os.path.join(processed_dir, 'test_features_boxcox.csv'), sep=';', index=False)
 
 if __name__ == '__main__':
     process_datasets()

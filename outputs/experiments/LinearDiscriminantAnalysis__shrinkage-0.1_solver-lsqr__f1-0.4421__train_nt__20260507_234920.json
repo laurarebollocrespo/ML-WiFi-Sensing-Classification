@@ -1,0 +1,19 @@
+{
+    "model_name": "LinearDiscriminantAnalysis",
+    "best_hyperparameters": {
+        "shrinkage": 0.1,
+        "solver": "lsqr"
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 5,
+        "best_cv_score": 0.43972646662185255
+    },
+    "validation_metrics": {
+        "accuracy": 0.44802172226532194,
+        "f1_macro": 0.4421091471705768,
+        "precision_macro": 0.4496678131467301,
+        "recall_macro": 0.4499900523488112
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       0.30      0.17      0.22       240\n           1       0.29      0.32      0.31       298\n           2       0.32      0.17      0.22       245\n           3       0.48      0.64      0.55       247\n           4       0.95      0.85      0.90       250\n           5       0.30      0.39      0.34       279\n           6       0.70      0.70      0.70       246\n           7       0.30      0.26      0.28       256\n           8       0.44      0.59      0.50       262\n           9       0.42      0.41      0.41       255\n\n    accuracy                           0.45      2578\n   macro avg       0.45      0.45      0.44      2578\nweighted avg       0.45      0.45      0.44      2578\n"
+}

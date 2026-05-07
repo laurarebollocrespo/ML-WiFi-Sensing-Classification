@@ -5,17 +5,13 @@ from sklearn.preprocessing import StandardScaler
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-def load_and_split_data(filepath: str, target_col: str, test_size: float = 0.2) -> tuple:
+
+def load_train_data(filepath: str, target_col: str) -> tuple[pd.DataFrame, pd.Series]:
     '''
-    Loads the dataset from a CSV file, drops unnecessary columns, and splits it into training and validation sets.
-    Args:
-    - filepath: Path to the CSV file containing the dataset
-    - target_col: The name of the target column in the dataset
-    - test_size: Proportion of the dataset to include in the validation split (default is 0.2)
-    Returns:
-    - X_train, X_val, y_train, y_val: Split datasets
+    Loads the FULL dataset from a CSV file and separates the target column.
+    No train/test splitting so we can train on 100% of the data.
     '''
-    print(f"Loading data from {filepath}...")
+    print(f"Loading FULL training data from {filepath}...")
     df = pd.read_csv(filepath, sep=";")
     
     # Drop unnecessary columns
@@ -25,9 +21,7 @@ def load_and_split_data(filepath: str, target_col: str, test_size: float = 0.2) 
     X = df.drop(columns=[target_col])
     y = df[target_col]
     
-    # Stratify to ensure all 10 positions are balanced in both train and val sets
-    return train_test_split(X, y, test_size=test_size, random_state=123, stratify=y)
-
+    return X, y
 
 def load_test_data(filepath: str) -> pd.DataFrame:
     """Loads the unlabeled test dataset"""
@@ -59,3 +53,24 @@ def scale_data(X: pd.DataFrame, scaler: StandardScaler = None) -> tuple[pd.DataF
     X_scaled_df = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
     
     return X_scaled_df, scaler
+
+from sklearn.decomposition import PCA
+
+def apply_pca(X: pd.DataFrame, pca: PCA = None, n_components: float = 0.95) -> tuple[pd.DataFrame, PCA]:
+    """
+    Applies PCA to reduce dimensionality while keeping `n_components` variance.
+    If pca is None, it fits a new PCA (for training data).
+    """
+    print(f"Applying PCA (n_components={n_components})...")
+    if pca is None:
+        pca = PCA(n_components=n_components, random_state=123)
+        X_pca = pca.fit_transform(X)
+    else:
+        X_pca = pca.transform(X)
+        
+    # Convert back to DataFrame with names like PC1, PC2, etc.
+    cols = [f"PC{i+1}" for i in range(X_pca.shape[1])]
+    X_pca_df = pd.DataFrame(X_pca, index=X.index, columns=cols)
+    
+    print(f"Dimensions reduced from {X.shape[1]} to {X_pca_df.shape[1]}")
+    return X_pca_df, pca

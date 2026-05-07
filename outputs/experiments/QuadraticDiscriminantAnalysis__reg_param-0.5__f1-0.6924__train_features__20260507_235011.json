@@ -1,0 +1,18 @@
+{
+    "model_name": "QuadraticDiscriminantAnalysis",
+    "best_hyperparameters": {
+        "reg_param": 0.5
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 5,
+        "best_cv_score": 0.7087387310714064
+    },
+    "validation_metrics": {
+        "accuracy": 0.686966640806827,
+        "f1_macro": 0.6923872543154537,
+        "precision_macro": 0.7149095710566133,
+        "recall_macro": 0.6889445581597415
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       0.36      0.60      0.45       240\n           1       0.63      0.43      0.51       298\n           2       0.47      0.44      0.46       245\n           3       0.55      0.70      0.62       247\n           4       0.73      0.93      0.82       250\n           5       0.92      0.81      0.86       279\n           6       0.92      0.74      0.82       246\n           7       0.74      0.60      0.66       256\n           8       0.96      0.84      0.89       262\n           9       0.86      0.78      0.82       255\n\n    accuracy                           0.69      2578\n   macro avg       0.71      0.69      0.69      2578\nweighted avg       0.72      0.69      0.69      2578\n"
+}

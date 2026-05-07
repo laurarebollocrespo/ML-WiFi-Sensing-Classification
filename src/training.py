@@ -3,6 +3,7 @@ training.py
 '''
 import json
 from datetime import datetime
+import os
 
 import pandas as pd
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
@@ -63,7 +64,8 @@ class MLTrainer:
             param_grid=self.param_grid,
             cv=cv_strategy,
             scoring=self.scoring,
-            n_jobs=-1 
+            n_jobs=-1,
+            verbose=3
         )
 
         search.fit(X_train, y_train)
@@ -88,7 +90,7 @@ class MLTrainer:
 
     def evaluate(self, X_val, y_val) -> None:
         '''
-        ¡
+        Evaluates the best model on the validation data and defines the experiment.
         ''' 
         if self.best_model is None:
             raise ValueError("Model has not been trained yet. Call fit_and_search() first.")
@@ -137,7 +139,7 @@ class MLTrainer:
         param_string = "_".join([f"{k}-{str(v)}" for k, v in params.items()])
         metric_string = f"f1-{metrics['f1_macro']:.4f}"
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        data_used = self.data
+        data_used = os.path.basename(self.data).replace(".csv", "")
 
         return f"{model_name}__{param_string}__{metric_string}__{data_used}__{timestamp}"
      
@@ -183,3 +185,4 @@ class MLTrainer:
 
         submission.to_csv(output_path, index=False)
         print(f"Submission saved to: {output_path}")
+
