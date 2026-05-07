@@ -42,7 +42,7 @@ def run_training(config_path: str) -> None:
     #3-Preprocessing
     #TODO
 
-    # 3. Scale all data (Preventing Leakage!)
+    #
     X_train_scaled, fitted_scaler = scale_data(X_train, scaler=None)
     X_val_scaled, _ = scale_data(X_val, scaler=fitted_scaler)
 
