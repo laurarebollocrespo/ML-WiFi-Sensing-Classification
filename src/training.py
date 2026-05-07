@@ -6,8 +6,8 @@ from datetime import datetime
 import os
 
 import pandas as pd
+from sklearn.base import BaseEstimator, clone
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
-from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score, classification_report, f1_score, precision_score, recall_score
 import joblib
 
@@ -81,12 +81,12 @@ class MLTrainer:
         # By default it will compute the binary recall of class 1, we can specify which class do we want by using this parameter 
         #recall_class_1 =recall_score(y_real,y_pred, pos_label=1)
         #f1_class_1 =f1_score(y_real,y_pred, pos_label=1)
-        accuracy = accuracy_score(y_real,y_pred)
-        f1_macro =f1_score(y_real,y_pred, average='macro')
-        precison_macro =precision_score(y_real,y_pred,  average='macro')
-        recall_macro =recall_score(y_real,y_pred,  average='macro')
+        accuracy = accuracy_score(y_real, y_pred)
+        f1_macro = f1_score(y_real, y_pred, average="macro")
+        precision_macro = precision_score(y_real, y_pred, average="macro")
+        recall_macro = recall_score(y_real, y_pred, average="macro")
         classif_report = classification_report(y_real, y_pred)
-        return [accuracy, f1_macro, precison_macro, recall_macro, classif_report]
+        return [accuracy, f1_macro, precision_macro, recall_macro, classif_report]
 
     def evaluate(self, X_val, y_val) -> None:
         '''
@@ -99,8 +99,18 @@ class MLTrainer:
 
         y_pred = self.best_model.predict(X_val)
 
-        print("hola")
         self.define_experiment(self.compute_metrics(y_val, y_pred))
+
+    def refit_on_full_data(self, X, y) -> None:
+        """
+        Refit the best estimator on the full labeled training set (e.g. after a held-out
+        validation split was used for monitoring). Keeps hyperparameters from grid search.
+        """
+        if self.best_model is None:
+            raise ValueError("Model has not been trained yet. Call fit_and_search() first.")
+        self.best_model = clone(self.best_model)
+        self.best_model.fit(X, y)
+        print("Refit best model on full labeled training data.")
 
     def define_experiment(self, metrics: list[float]) -> None:
         
@@ -126,7 +136,15 @@ class MLTrainer:
             "classification_report": classif_report
         }
 
-    
+    def note_submission_refit(self) -> None:
+        """Document that validation metrics refer to the pre-refit model; .pkl uses all labeled data."""
+        if not self.experiment_results:
+            return
+        self.experiment_results["submission_model_note"] = (
+            "Validation metrics are for the best estimator trained only on the train split. "
+            "The saved model was refit on all labeled rows for submission."
+        )
+
     def generate_base_filename(self) -> str:
 
         if not self.experiment_results:
@@ -148,6 +166,8 @@ class MLTrainer:
         Saves both the model (.pkl) and the experiment (.json) using the exact same base name.
         """
         models_dir, experiments_dir = "outputs/models", "outputs/experiments"
+        os.makedirs(models_dir, exist_ok=True)
+        os.makedirs(experiments_dir, exist_ok=True)
 
         base_name = self.generate_base_filename()
 
@@ -159,15 +179,15 @@ class MLTrainer:
         #Save the Experiment JSON
         exp_filepath = f"{experiments_dir}/{base_name}.json"
         print(f"Saving experiment to {exp_filepath}...")
-        with open(exp_filepath, "w") as f:
-            json.dump(self.experiment_results, f, indent=4)
+        with open(exp_filepath, "w", encoding="utf-8") as f:
+            json.dump(self.experiment_results, f, indent=4, default=str)
 
-    def save_submission(self, X_test: pd.DataFrame) -> None:
+    def save_submission(self, X_test: pd.DataFrame, test_ids: pd.Series | None = None) -> None:
         """
-        Generates a Kaggle submission CSV using the same base filename 
-        as the model and experiment JSON.
+        Writes predictions aligned with the original test IDs (not arbitrary row indices).
         """
-        submissions_dir: str = "outputs/submissions"
+        submissions_dir = "outputs/submissions"
+        os.makedirs(submissions_dir, exist_ok=True)
         if self.best_model is None:
             raise ValueError("Model has not been trained yet.")
 
@@ -175,12 +195,17 @@ class MLTrainer:
         output_path = f"{submissions_dir}/{base_name}.csv"
 
         print("Generating Kaggle predictions...")
-        
+
         y_pred = self.best_model.predict(X_test)
 
+        if test_ids is not None and len(test_ids) == len(y_pred):
+            ids = test_ids.reset_index(drop=True)
+        else:
+            ids = pd.Series(range(len(y_pred)), name="ID")
+
         submission = pd.DataFrame({
-            "ID": range(len(y_pred)),
-            "POSITION": y_pred.astype(int)
+            "ID": ids,
+            "POSITION": y_pred.astype(int),
         })
 
         submission.to_csv(output_path, index=False)

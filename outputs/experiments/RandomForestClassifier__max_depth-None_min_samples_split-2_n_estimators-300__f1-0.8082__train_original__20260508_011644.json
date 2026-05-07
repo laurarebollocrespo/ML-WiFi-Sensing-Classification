@@ -1,0 +1,20 @@
+{
+    "model_name": "RandomForestClassifier",
+    "best_hyperparameters": {
+        "max_depth": null,
+        "min_samples_split": 2,
+        "n_estimators": 300
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 5,
+        "best_cv_score": 0.8056023652194628
+    },
+    "validation_metrics": {
+        "accuracy": 0.8068269976726145,
+        "f1_macro": 0.8082227723457913,
+        "precision_macro": 0.8161029885133827,
+        "recall_macro": 0.8061417429871429
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       0.63      0.66      0.64       240\n           1       0.66      0.73      0.70       298\n           2       0.72      0.70      0.71       245\n           3       0.85      0.72      0.78       247\n           4       0.95      0.85      0.90       250\n           5       0.89      0.86      0.88       279\n           6       0.92      0.87      0.90       246\n           7       0.85      0.84      0.85       256\n           8       0.94      0.85      0.89       262\n           9       0.74      0.97      0.84       255\n\n    accuracy                           0.81      2578\n   macro avg       0.82      0.81      0.81      2578\nweighted avg       0.82      0.81      0.81      2578\n"
+}

@@ -1,38 +1,49 @@
 '''
 # src/preprocessing.py
 '''
+from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
 import pandas as pd
-from sklearn.model_selection import train_test_split
+
+_DROP_FROM_FEATURES = ("seq_ctrl", "ID")
 
 
 def load_train_data(filepath: str, target_col: str) -> tuple[pd.DataFrame, pd.Series]:
-    '''
-    Loads the FULL dataset from a CSV file and separates the target column.
-    No train/test splitting so we can train on 100% of the data.
-    '''
-    print(f"Loading FULL training data from {filepath}...")
+    """
+    Loads labeled training data. Drops identifier / non-feature columns.
+    Splitting and refitting on full data are handled in the training script.
+    """
+    print(f"Loading training data from {filepath}...")
     df = pd.read_csv(filepath, sep=";")
-    
-    # Drop unnecessary columns
-    if "seq_ctrl" in df.columns:
-        df = df.drop(columns=["seq_ctrl"])
-        
+
+    drop_cols = [c for c in _DROP_FROM_FEATURES if c in df.columns]
+    if drop_cols:
+        df = df.drop(columns=drop_cols)
+
     X = df.drop(columns=[target_col])
     y = df[target_col]
-    
+
     return X, y
 
-def load_test_data(filepath: str) -> pd.DataFrame:
-    """Loads the unlabeled test dataset"""
+
+def load_test_data(filepath: str) -> tuple[pd.DataFrame, pd.Series]:
+    """
+    Loads unlabeled test data.
+    Returns (features, ID series for submission). seq_ctrl and ID are excluded from features.
+    """
     print(f"Loading test data from {filepath}...")
     df = pd.read_csv(filepath, sep=";")
-    
-    # Drop the sequence column just like we did for the training set
-    if "seq_ctrl" in df.columns:
-        df = df.drop(columns=["seq_ctrl"])
-        
-    return df
+
+    id_col = "ID" if "ID" in df.columns else None
+    test_ids = df[id_col].copy() if id_col is not None else pd.Series(range(len(df)), name="ID")
+
+    drop_cols = [c for c in _DROP_FROM_FEATURES if c in df.columns]
+    if drop_cols:
+        X = df.drop(columns=drop_cols)
+    else:
+        X = df.copy()
+
+    return X, test_ids
 
 
 def scale_data(X: pd.DataFrame, scaler: StandardScaler = None) -> tuple[pd.DataFrame, StandardScaler]:
@@ -54,7 +65,6 @@ def scale_data(X: pd.DataFrame, scaler: StandardScaler = None) -> tuple[pd.DataF
     
     return X_scaled_df, scaler
 
-from sklearn.decomposition import PCA
 
 def apply_pca(X: pd.DataFrame, pca: PCA = None, n_components: float = 0.95) -> tuple[pd.DataFrame, PCA]:
     """
