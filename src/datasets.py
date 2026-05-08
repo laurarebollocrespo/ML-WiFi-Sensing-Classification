@@ -52,37 +52,14 @@ def add_features(df):
     # Phase difference or something, but keep simple
     return df
 
-def fit_apply_box_cox(df: pd.DataFrame) -> tuple[pd.DataFrame, dict[str, float | None]]:
-    """
-    Fit Box-Cox per numeric column on df (training data).
-    Returns transformed copy and a dict of lambdas (None means column was skipped).
-    """
-    out = df.copy()
-    lambdas: dict[str, float | None] = {}
+def apply_box_cox(df) -> pd.DataFrame:
+    """Apply Box-Cox transformation to skewed features."""
     for col in df.columns:
-        if df[col].dtype not in ["int64", "float64"]:
-            continue
-        if (df[col] <= 0).any():
-            lambdas[col] = None
-            continue
-        transformed, lmbda = stats.boxcox(df[col].astype(float))
-        out[col] = transformed
-        lambdas[col] = float(lmbda)
-    return out, lambdas
-
-
-def transform_box_cox(df: pd.DataFrame, lambdas: dict[str, float | None]) -> pd.DataFrame:
-    """Apply Box-Cox using lambdas from training; do not re-fit on test."""
-    out = df.copy()
-    for col, lmbda in lambdas.items():
-        if col not in out.columns or lmbda is None:
-            continue
-        if out[col].dtype not in ["int64", "float64"]:
-            continue
-        if (out[col] <= 0).any():
-            continue
-        out[col] = stats.boxcox(out[col].astype(float), lmbda=lmbda)
-    return out
+        if df[col].dtype in ['int64', 'float64']:
+            if (df[col] <= 0).any():
+                continue  # Box-Cox requires positive values
+            df[col], _ = stats.boxcox(df[col])
+    return df
 
 
 def process_datasets():
@@ -124,26 +101,26 @@ def process_datasets():
     test_feat.to_csv(os.path.join(processed_dir, 'test_features.csv'), sep=';', index=False)
 
     # 5. With Box-Cox transformation
-    train_boxcox, boxcox_lambdas = fit_apply_box_cox(train.copy())
-    test_boxcox = transform_box_cox(test.copy(), boxcox_lambdas)
+    train_boxcox = apply_box_cox(train.copy())
+    test_boxcox = apply_box_cox(test.copy())
     train_boxcox.to_csv(os.path.join(processed_dir, 'train_boxcox.csv'), sep=';', index=False)
     test_boxcox.to_csv(os.path.join(processed_dir, 'test_boxcox.csv'), sep=';', index=False)
 
     # 6. IQR outliers removed + Box-Cox
-    train_iqr_boxcox, lambdas_iqr = fit_apply_box_cox(remove_outliers_iqr(train.copy(), feature_cols))
-    test_iqr_boxcox = transform_box_cox(remove_outliers_iqr(test.copy(), feature_cols), lambdas_iqr)
+    train_iqr_boxcox = apply_box_cox(remove_outliers_iqr(train.copy(), feature_cols))
+    test_iqr_boxcox = apply_box_cox(remove_outliers_iqr(test.copy(), feature_cols))
     train_iqr_boxcox.to_csv(os.path.join(processed_dir, 'train_iqr_boxcox.csv'), sep=';', index=False)
     test_iqr_boxcox.to_csv(os.path.join(processed_dir, 'test_iqr_boxcox.csv'), sep=';', index=False)
 
     # 7. LOF outliers removed + Box-Cox
-    train_lof_boxcox, lambdas_lof = fit_apply_box_cox(remove_outliers_lof(train.copy(), feature_cols))
-    test_lof_boxcox = transform_box_cox(remove_outliers_lof(test.copy(), feature_cols), lambdas_lof)
+    train_lof_boxcox = apply_box_cox(remove_outliers_lof(train.copy(), feature_cols))
+    test_lof_boxcox = apply_box_cox(remove_outliers_lof(test.copy(), feature_cols))
     train_lof_boxcox.to_csv(os.path.join(processed_dir, 'train_lof_boxcox.csv'), sep=';', index=False)
     test_lof_boxcox.to_csv(os.path.join(processed_dir, 'test_lof_boxcox.csv'), sep=';', index=False)
 
     # 8. With new features + Box-Cox
-    train_feat_boxcox, lambdas_feat = fit_apply_box_cox(add_features(train.copy()))
-    test_feat_boxcox = transform_box_cox(add_features(test.copy()), lambdas_feat)
+    train_feat_boxcox = apply_box_cox(add_features(train.copy()))
+    test_feat_boxcox = apply_box_cox(add_features(test.copy()))
     train_feat_boxcox.to_csv(os.path.join(processed_dir, 'train_features_boxcox.csv'), sep=';', index=False)
     test_feat_boxcox.to_csv(os.path.join(processed_dir, 'test_features_boxcox.csv'), sep=';', index=False)
 
