@@ -1,0 +1,22 @@
+{
+    "model_name": "LogisticRegression",
+    "best_hyperparameters": {
+        "C": 0.1,
+        "l1_ratio": 0.2,
+        "max_iter": 2000,
+        "penalty": "elasticnet",
+        "solver": "saga"
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 5,
+        "best_cv_score": 0.8031545665524762
+    },
+    "validation_metrics": {
+        "accuracy": 0.8064391000775796,
+        "f1_macro": 0.8027886950974666,
+        "precision_macro": 0.8021329640646243,
+        "recall_macro": 0.8057314540383038
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       0.66      0.65      0.65       234\n           1       0.62      0.63      0.62       284\n           2       0.61      0.48      0.54       260\n           3       0.71      0.82      0.76       228\n           4       0.94      0.93      0.94       267\n           5       0.91      0.94      0.92       282\n           6       0.93      0.94      0.94       252\n           7       0.86      0.86      0.86       278\n           8       0.91      0.93      0.92       264\n           9       0.88      0.87      0.87       229\n\n    accuracy                           0.81      2578\n   macro avg       0.80      0.81      0.80      2578\nweighted avg       0.80      0.81      0.80      2578\n"
+}

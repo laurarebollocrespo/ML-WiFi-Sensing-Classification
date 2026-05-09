@@ -6,7 +6,12 @@ from datetime import datetime
 import os
 
 import pandas as pd
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.experimental import enable_halving_search_cv  # noqa
+from sklearn.model_selection import (
+    GridSearchCV,
+    StratifiedKFold,
+    HalvingGridSearchCV
+)
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score, classification_report, f1_score, precision_score, recall_score
 import joblib
@@ -57,16 +62,29 @@ class MLTrainer:
         '''
         print(f"Searching for best hyperparameters using {self.cv_folds}-fold Stratified CV...")
         
-        cv_strategy = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=123)
+        cv_strategy = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=1)
         
-        search = GridSearchCV(
+        # search = GridSearchCV(
+        #     estimator=self.model,
+        #     param_grid=self.param_grid,
+        #     cv=cv_strategy,
+        #     scoring=self.scoring,
+        #     n_jobs=-1,
+        #     verbose=3
+        # )
+
+        # Use when having large grids:
+        print("Using HalvingGridSearchCV for more efficient hyperparameter search...")
+        search = HalvingGridSearchCV(
             estimator=self.model,
             param_grid=self.param_grid,
             cv=cv_strategy,
             scoring=self.scoring,
+            factor=2,          # how aggressively to halve
             n_jobs=-1,
             verbose=3
         )
+
 
         search.fit(X_train, y_train)
         

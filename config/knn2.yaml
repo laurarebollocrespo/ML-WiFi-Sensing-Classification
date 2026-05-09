@@ -1,0 +1,28 @@
+# ============================================================
+#  KNN — K-Nearest Neighbours  (non-parametric / Parzen-like)
+#  With 267 features, high-k values and distance weighting
+#  usually outperform uniform vote.
+#  'distance' weight ≈ Parzen-window style density estimation.
+#
+#  Tip: use PCA (use_pca: true) if runtime is too slow.
+# ============================================================
+
+data_path:      "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col:     "position"
+test_size:      0.2
+
+add_magnitude_features: true
+use_pca:        false     # set true to speed up if needed
+
+model_name: "knn"
+cv_folds:   5
+scoring:    "f1_macro"
+
+param_grid:
+  n_neighbors: [1, 3, 5, 7, 11, 15, 21, 31]
+  weights:     ['uniform', 'distance']
+  metric:      ['euclidean', 'manhattan']
+  # p is only used when metric='minkowski'; euclidean=p2, manhattan=p1
+  # so we add minkowski explicitly below if needed
+  leaf_size:   [20, 30, 50]

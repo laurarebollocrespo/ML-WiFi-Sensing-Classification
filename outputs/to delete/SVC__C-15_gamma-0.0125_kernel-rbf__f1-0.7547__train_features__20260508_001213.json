@@ -1,0 +1,20 @@
+{
+    "model_name": "SVC",
+    "best_hyperparameters": {
+        "C": 15,
+        "gamma": 0.0125,
+        "kernel": "rbf"
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 5,
+        "best_cv_score": 0.7438194189456727
+    },
+    "validation_metrics": {
+        "accuracy": 0.7532971295577967,
+        "f1_macro": 0.7546704905131169,
+        "precision_macro": 0.7572711215843558,
+        "recall_macro": 0.7529534449131
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       0.57      0.60      0.58       240\n           1       0.59      0.63      0.61       298\n           2       0.60      0.56      0.58       245\n           3       0.67      0.72      0.69       247\n           4       0.92      0.87      0.89       250\n           5       0.86      0.85      0.86       279\n           6       0.89      0.84      0.86       246\n           7       0.78      0.80      0.79       256\n           8       0.86      0.85      0.85       262\n           9       0.83      0.82      0.83       255\n\n    accuracy                           0.75      2578\n   macro avg       0.76      0.75      0.75      2578\nweighted avg       0.76      0.75      0.75      2578\n"
+}

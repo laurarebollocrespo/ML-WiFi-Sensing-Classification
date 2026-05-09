@@ -1,9 +1,40 @@
 '''
 # src/preprocessing.py
 '''
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import RobustScaler
 import pandas as pd
 from sklearn.model_selection import train_test_split
+import numpy as np
+
+def preprocess_data(filepath_train: str, filepath_test: str, target_col: str) -> dict[str, pd.DataFrame | pd.Series]:
+
+    #TRAINING DATA
+    X_train_full, y_train_full = load_train_data(filepath_train, target_col=target_col)
+    X_train_full = create_magnitude_features(X_train_full)
+    X_train_full = X_train_full.drop(columns=["seq_ctrl"])
+
+    #scale
+    X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=42)
+    scaler = RobustScaler()
+    scaler = scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_val = scaler.transform(X_val)
+    X_train_full = scaler.transform(X_train_full)
+
+    #TEST DATA
+    X_test = load_test_data(filepath_test)
+    X_test = create_magnitude_features(X_test)
+    X_test = X_test.drop(columns=["seq_ctrl"])
+    X_test = scaler.transform(X_test)
+
+    print("Preprocessing complete. Scaled training and test data ready for modeling.")
+    return {
+        "X_train": X_train,
+        "y_train": y_train,
+        "X_val": X_val,
+        "y_val": y_val,
+        "X_test": X_test
+    }
 
 
 def load_train_data(filepath: str, target_col: str) -> tuple[pd.DataFrame, pd.Series]:
@@ -13,64 +44,53 @@ def load_train_data(filepath: str, target_col: str) -> tuple[pd.DataFrame, pd.Se
     '''
     print(f"Loading FULL training data from {filepath}...")
     df = pd.read_csv(filepath, sep=";")
-    
-    # Drop unnecessary columns
-    if "seq_ctrl" in df.columns:
-        df = df.drop(columns=["seq_ctrl"])
-        
+           
     X = df.drop(columns=[target_col])
     y = df[target_col]
     
     return X, y
 
+
 def load_test_data(filepath: str) -> pd.DataFrame:
     """Loads the unlabeled test dataset"""
     print(f"Loading test data from {filepath}...")
-    df = pd.read_csv(filepath, sep=";")
-    
-    # Drop the sequence column just like we did for the training set
-    if "seq_ctrl" in df.columns:
-        df = df.drop(columns=["seq_ctrl"])
-        
+    df = pd.read_csv(filepath, sep=";")        
     return df
 
 
-def scale_data(X: pd.DataFrame, scaler: StandardScaler = None) -> tuple[pd.DataFrame, StandardScaler]:
+def create_magnitude_features(X):
     """
-    Scales the features. 
-    If scaler is None, it fits a new scaler (used for training data).
-    If a scaler is provided, it only transforms (used for validation/test data).
-    """
-    print("Applying StandardScaler...")
-    if scaler is None:
-        scaler = StandardScaler()
-        # Fit and transform training data
-        X_scaled = scaler.fit_transform(X)
-    else:
-        # Transform unseen data without fitting
-        X_scaled = scaler.transform(X)
-        
-    X_scaled_df = pd.DataFrame(X_scaled, columns=X.columns, index=X.index)
-    
-    return X_scaled_df, scaler
+    Crea features de magnitud a partir de componentes I/Q
+    y devuelve el dataset reducido.
 
-from sklearn.decomposition import PCA
+    Parameters:
+    - X: DataFrame con columnas I{n}_{antena}, Q{n}_{antena}
 
-def apply_pca(X: pd.DataFrame, pca: PCA = None, n_components: float = 0.95) -> tuple[pd.DataFrame, PCA]:
+    Returns:
+    - X_new: DataFrame con features originales + magnitudes
     """
-    Applies PCA to reduce dimensionality while keeping `n_components` variance.
-    If pca is None, it fits a new PCA (for training data).
-    """
-    print(f"Applying PCA (n_components={n_components})...")
-    if pca is None:
-        pca = PCA(n_components=n_components, random_state=123)
-        X_pca = pca.fit_transform(X)
-    else:
-        X_pca = pca.transform(X)
-        
-    # Convert back to DataFrame with names like PC1, PC2, etc.
-    cols = [f"PC{i+1}" for i in range(X_pca.shape[1])]
-    X_pca_df = pd.DataFrame(X_pca, index=X.index, columns=cols)
-    
-    print(f"Dimensions reduced from {X.shape[1]} to {X_pca_df.shape[1]}")
-    return X_pca_df, pca
+
+    features = ['seq_ctrl', 'aoa', 'rssi1', 'rssi2']
+    magnitude = []
+
+    for antena in [1, 2]:
+        for n in range(64):
+
+            i_col = f"I{n}_{antena}"
+            q_col = f"Q{n}_{antena}"
+            mag_col = f"mag{n}_{antena}"
+
+            X[mag_col] = np.sqrt(X[i_col]**2 + X[q_col]**2)
+            magnitude.append(mag_col)
+
+    X = X[features + magnitude]
+
+    const_col = [col for col in X.columns if X[col].nunique() <= 1]
+
+    print(f"Columnas eliminadas: {const_col}")
+    X = X.drop(columns=const_col)
+
+
+    return X
+
+

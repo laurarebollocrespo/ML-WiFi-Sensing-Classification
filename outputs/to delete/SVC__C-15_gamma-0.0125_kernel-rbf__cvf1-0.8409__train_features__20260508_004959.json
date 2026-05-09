@@ -1,0 +1,13 @@
+{
+    "model_name": "SVC",
+    "best_hyperparameters": {
+        "C": 15,
+        "gamma": 0.0125,
+        "kernel": "rbf"
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 5,
+        "best_cv_score": 0.8408533198587549
+    }
+}
