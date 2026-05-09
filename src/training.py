@@ -6,12 +6,7 @@ from datetime import datetime
 import os
 
 import pandas as pd
-from sklearn.experimental import enable_halving_search_cv  # noqa
-from sklearn.model_selection import (
-    GridSearchCV,
-    StratifiedKFold,
-    HalvingGridSearchCV
-)
+from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score, classification_report, f1_score, precision_score, recall_score
 import joblib
@@ -64,27 +59,14 @@ class MLTrainer:
         
         cv_strategy = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=1)
         
-        # search = GridSearchCV(
-        #     estimator=self.model,
-        #     param_grid=self.param_grid,
-        #     cv=cv_strategy,
-        #     scoring=self.scoring,
-        #     n_jobs=-1,
-        #     verbose=3
-        # )
-
-        # Use when having large grids:
-        print("Using HalvingGridSearchCV for more efficient hyperparameter search...")
-        search = HalvingGridSearchCV(
+        search = GridSearchCV(
             estimator=self.model,
             param_grid=self.param_grid,
             cv=cv_strategy,
             scoring=self.scoring,
-            factor=2,          # how aggressively to halve
             n_jobs=-1,
             verbose=3
         )
-
 
         search.fit(X_train, y_train)
         
@@ -94,6 +76,16 @@ class MLTrainer:
 
         print(f"Best CV Score: {self.best_cv_score:.4f}")
         print(f"Best Parameters: {self.best_params}")
+
+    def refit_full(self, X_full, y_full) -> None:
+        """Refit best model on train+val combined before submission."""
+
+        print("Refitting best model on full training data (train + val)...")
+        if self.best_model is None:
+            raise ValueError("Model has not been trained yet. Call fit_and_search() first.")
+        
+        self.best_model.set_params(**self.best_params)
+        self.best_model.fit(X_full, y_full)
 
     def compute_metrics(self, y_real: list, y_pred: list) -> list[float]:
         # By default it will compute the binary recall of class 1, we can specify which class do we want by using this parameter 

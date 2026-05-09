@@ -1,0 +1,21 @@
+{
+    "model_name": "KNeighborsClassifier",
+    "best_hyperparameters": {
+        "leaf_size": 20,
+        "metric": "manhattan",
+        "n_neighbors": 1,
+        "weights": "uniform"
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 5,
+        "best_cv_score": 0.8428215260375328
+    },
+    "validation_metrics": {
+        "accuracy": 0.8607447633824671,
+        "f1_macro": 0.86084591164885,
+        "precision_macro": 0.8680973815368459,
+        "recall_macro": 0.8592207032093514
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       0.72      0.84      0.78       234\n           1       0.73      0.81      0.76       284\n           2       0.80      0.80      0.80       260\n           3       0.75      0.85      0.80       228\n           4       0.90      0.96      0.93       267\n           5       0.97      0.95      0.96       282\n           6       0.97      0.94      0.95       252\n           7       0.94      0.85      0.89       278\n           8       0.95      0.83      0.88       264\n           9       0.96      0.77      0.85       229\n\n    accuracy                           0.86      2578\n   macro avg       0.87      0.86      0.86      2578\nweighted avg       0.87      0.86      0.86      2578\n"
+}

@@ -1,19 +1,16 @@
 # Data settings
-data_path: "data/processed/train_features_boxcox.csv"
-test_data_path: "data/processed/test_features_boxcox.csv"
+data_path: "data/raw/train_nt.csv" # Adjust based on your chosen dataset
+test_data_path: "data/raw/test_nolabels_nt.csv"
 target_col: "position"
 test_size: 0.2
-models_dir: "outputs/models"
-experiments_dir: "outputs/experiments"
-submissions_dir: "outputs/submissions"
 
 # Training settings
 model_name: "svm"
-cv_folds: 3 # Lowered to 3 because SVMs are SLOW to train
+cv_folds: 5
 scoring: "f1_macro"
 
 # Hyperparameter Search Space
 param_grid:
   kernel: ['rbf']
-  C: [0.1, 1, 10]
-  gamma: ['scale', 'auto', 0.1]
+  C: [0.1, 1, 10, 15, 100]
+  gamma: ['scale', 'auto', 0.0125, 0.1]

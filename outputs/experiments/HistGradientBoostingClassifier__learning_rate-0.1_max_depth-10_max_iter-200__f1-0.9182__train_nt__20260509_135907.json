@@ -1,0 +1,20 @@
+{
+    "model_name": "HistGradientBoostingClassifier",
+    "best_hyperparameters": {
+        "learning_rate": 0.1,
+        "max_depth": 10,
+        "max_iter": 200
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 5,
+        "best_cv_score": 0.9229033928609673
+    },
+    "validation_metrics": {
+        "accuracy": 0.9185415050426687,
+        "f1_macro": 0.9182403086709081,
+        "precision_macro": 0.9194029880649965,
+        "recall_macro": 0.9184445065680082
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       0.87      0.89      0.88       234\n           1       0.83      0.87      0.85       284\n           2       0.90      0.85      0.87       260\n           3       0.92      0.88      0.90       228\n           4       0.97      0.96      0.96       267\n           5       0.96      0.96      0.96       282\n           6       0.98      0.97      0.97       252\n           7       0.94      0.94      0.94       278\n           8       0.98      0.91      0.94       264\n           9       0.85      0.97      0.90       229\n\n    accuracy                           0.92      2578\n   macro avg       0.92      0.92      0.92      2578\nweighted avg       0.92      0.92      0.92      2578\n"
+}

@@ -13,7 +13,6 @@ target_col:     "position"
 test_size:      0.2
 
 add_magnitude_features: true
-use_pca:        false     # set true to speed up if needed
 
 model_name: "knn"
 cv_folds:   5

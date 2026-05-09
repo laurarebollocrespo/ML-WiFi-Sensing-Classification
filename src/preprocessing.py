@@ -9,23 +9,29 @@ import numpy as np
 def preprocess_data(filepath_train: str, filepath_test: str, target_col: str) -> dict[str, pd.DataFrame | pd.Series]:
 
     #TRAINING DATA
-    X_train_full, y_train_full = load_train_data(filepath_train, target_col=target_col)
-    X_train_full = create_magnitude_features(X_train_full)
-    X_train_full = X_train_full.drop(columns=["seq_ctrl"])
+    X_train_full_raw, y_train_full = load_train_data(filepath_train, target_col=target_col)
+    X_train_full_raw = create_magnitude_features(X_train_full_raw)
+    X_train_full_raw = X_train_full_raw.drop(columns=["seq_ctrl"])
 
-    #scale
-    X_train, X_val, y_train, y_val = train_test_split(X_train_full, y_train_full, test_size=0.2, random_state=42)
-    scaler = RobustScaler()
-    scaler = scaler.fit(X_train)
-    X_train = scaler.transform(X_train)
-    X_val = scaler.transform(X_val)
-    X_train_full = scaler.transform(X_train_full)
+    # --- Evaluation scaler (fit only on X_train) ---
+    X_train_raw, X_val_raw, y_train, y_val = train_test_split(
+        X_train_full_raw, y_train_full, test_size=0.2, random_state=1, stratify=y_train_full
+    )
 
-    #TEST DATA
+    scaler_eval = RobustScaler().fit(X_train_raw)
+    X_train = scaler_eval.transform(X_train_raw)
+    X_val = scaler_eval.transform(X_val_raw)
+    X_train_full = scaler_eval.transform(X_train_full_raw)
+
+    # --- Final scaler (fit on FULL training data) ---
+    scaler_full = RobustScaler().fit(X_train_full_raw)
+    X_train_full_final = scaler_full.transform(X_train_full_raw)
+
+    # TEST DATA (scaled with full-data scaler)
     X_test = load_test_data(filepath_test)
     X_test = create_magnitude_features(X_test)
     X_test = X_test.drop(columns=["seq_ctrl"])
-    X_test = scaler.transform(X_test)
+    X_test = scaler_full.transform(X_test)
 
     print("Preprocessing complete. Scaled training and test data ready for modeling.")
     return {
@@ -33,8 +39,15 @@ def preprocess_data(filepath_train: str, filepath_test: str, target_col: str) ->
         "y_train": y_train,
         "X_val": X_val,
         "y_val": y_val,
+
+        "X_train_full": X_train_full,
+        "y_train_full": y_train_full,
+
+        "X_train_full_final": X_train_full_final,
+
         "X_test": X_test
     }
+
 
 
 def load_train_data(filepath: str, target_col: str) -> tuple[pd.DataFrame, pd.Series]:
