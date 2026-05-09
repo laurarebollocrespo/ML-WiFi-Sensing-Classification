@@ -93,10 +93,10 @@ class MLTrainer:
         #f1_class_1 =f1_score(y_real,y_pred, pos_label=1)
         accuracy = accuracy_score(y_real,y_pred)
         f1_macro =f1_score(y_real,y_pred, average='macro')
-        precison_macro =precision_score(y_real,y_pred,  average='macro')
+        precision_macro =precision_score(y_real,y_pred,  average='macro')
         recall_macro =recall_score(y_real,y_pred,  average='macro')
         classif_report = classification_report(y_real, y_pred)
-        return [accuracy, f1_macro, precison_macro, recall_macro, classif_report]
+        return [accuracy, f1_macro, precision_macro, recall_macro, classif_report]
 
     def evaluate(self, X_val, y_val) -> None:
         '''
@@ -147,6 +147,9 @@ class MLTrainer:
         metrics = self.experiment_results["validation_metrics"]
         
         param_string = "_".join([f"{k}-{str(v)}" for k, v in params.items()])
+        if len(param_string) > 50:
+            param_string = "complex_ensemble_params"
+            
         metric_string = f"f1-{metrics['f1_macro']:.4f}"
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         data_used = os.path.basename(self.data).replace(".csv", "")

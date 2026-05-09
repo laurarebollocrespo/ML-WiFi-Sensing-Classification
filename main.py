@@ -4,27 +4,84 @@ main.py
 import click
 from sklearn.base import BaseEstimator
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
-from sklearn.ensemble import HistGradientBoostingClassifier, RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.neural_network import MLPClassifier
+from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
+from sklearn.ensemble import (
+    RandomForestClassifier,
+    AdaBoostClassifier,
+    GradientBoostingClassifier,
+    HistGradientBoostingClassifier,
+    BaggingClassifier,
+    ExtraTreesClassifier,
+    StackingClassifier,
+    VotingClassifier
+)
+from sklearn.neural_network import MLPClassifier
+from sklearn.feature_selection import RFE
+
+# XGBoost (if installed)
+from xgboost import XGBClassifier
 import yaml
 from src.preprocessing import *
 from src.training import MLTrainer
-from sklearn.preprocessing import RobustScaler
+
+def build_stacking():
+    return StackingClassifier(
+        estimators=[
+            ('rf', RandomForestClassifier()),
+            ('svm', SVC(probability=True)), # Must keep probability=True to allow stacking!
+            ('xgb', XGBClassifier())
+        ],
+        final_estimator=LogisticRegression(),
+        passthrough=True,
+        n_jobs=-1,
+        cv=3
+    )
+
+def build_voting():
+    return VotingClassifier(
+        estimators=[
+            ('rf', RandomForestClassifier()),
+            ('svm', SVC(probability=True)),
+            ('xgb', XGBClassifier())
+        ],
+        voting='soft'
+    )
+
+def build_rfe():
+    return RFE(
+        estimator=RandomForestClassifier()
+    )
 
 
 MODEL_REGISTRY = {
+    # Classical
     "lda": LinearDiscriminantAnalysis,
     "qda": QuadraticDiscriminantAnalysis,
     "knn": KNeighborsClassifier,
     "logistic": LogisticRegression,
     "svm": SVC,
+
+    # Trees & Ensembles
     "random_forest": RandomForestClassifier,
+    "extra_trees": ExtraTreesClassifier,
+    "gradient_boosting": GradientBoostingClassifier,
     "hist_gradient_boosting": HistGradientBoostingClassifier,
-    "mlp": MLPClassifier
-}   
+    "ada_boost": AdaBoostClassifier,
+    "bagging": BaggingClassifier,
+
+    # Boosting (external)
+    "xgboost": XGBClassifier,
+
+    # Neural Nets
+    "mlp": MLPClassifier,
+
+    # Meta-models (factory functions)
+    "stacking": build_stacking,
+    "voting": build_voting,
+    "rfe": build_rfe,
+}
 
 def get_model(model_name: str) -> BaseEstimator:
     """Retrieves and initializes the model from the registry."""
