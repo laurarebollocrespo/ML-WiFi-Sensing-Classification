@@ -1,4 +1,3 @@
-outputs/models/
-outputs/to delete/
+outputs/
 *.pkl
 data/
