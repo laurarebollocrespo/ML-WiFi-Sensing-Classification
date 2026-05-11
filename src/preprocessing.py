@@ -18,19 +18,19 @@ def preprocess_data(filepath_train: str, filepath_test: str, target_col: str) ->
         X_train_full_raw, y_train_full, test_size=0.2, random_state=1, stratify=y_train_full
     )
 
-    scaler_eval = RobustScaler().fit(X_train_raw)
+    scaler_final = RobustScaler().fit(X_train_raw)
     X_train = pd.DataFrame(
-        scaler_eval.transform(X_train_raw),
+        scaler_final.transform(X_train_raw),
         columns=X_train_raw.columns,
         index=X_train_raw.index
     )
     X_val = pd.DataFrame(
-        scaler_eval.transform(X_val_raw),
+        scaler_final.transform(X_val_raw),
         columns=X_val_raw.columns,
         index=X_val_raw.index
     )
     X_train_full = pd.DataFrame(
-        scaler_eval.transform(X_train_full_raw),
+        scaler_final.transform(X_train_full_raw),
         columns=X_train_full_raw.columns,
         index=X_train_full_raw.index
     )
@@ -48,7 +48,7 @@ def preprocess_data(filepath_train: str, filepath_test: str, target_col: str) ->
     X_test = create_features(X_test)
     X_test = X_test.drop(columns=["seq_ctrl"])
     X_test = pd.DataFrame(
-        scaler_full.transform(X_test), 
+        scaler_final.transform(X_test), 
         columns=X_test.columns,
         index=X_test.index
     )
@@ -158,10 +158,32 @@ def create_features(X: pd.DataFrame) -> pd.DataFrame:
     for antena in [1, 2]:
 
         mag_cols = [f"mag{n}_{antena}" for n in range(64) if f"mag{n}_{antena}" in X.columns]
+        phase_cols_ant = [f"phase{n}_{antena}" for n in range(64) if f"phase{n}_{antena}" in X.columns]
 
         stats_cols[f"mean_mag_{antena}"] = X[mag_cols].mean(axis=1)
         stats_cols[f"std_mag_{antena}"]  = X[mag_cols].std(axis=1)
         stats_cols[f"max_mag_{antena}"]  = X[mag_cols].max(axis=1)
+
+        mags   = X[mag_cols].values    # (N, 64)
+        phases = X[phase_cols_ant].values  # (N, 64)
+
+        # Proyecciones cartesianas medias (resume el "vector medio" del canal)
+        stats_cols[f"mean_cos_{antena}"] = (mags * np.cos(phases)).mean(axis=1)
+        stats_cols[f"mean_sin_{antena}"] = (mags * np.sin(phases)).mean(axis=1)
+
+        # Radio medio ponderado (subportadoras con más energía pesan más)
+        weights = mags / (mags.sum(axis=1, keepdims=True) + 1e-9)
+        stats_cols[f"weighted_phase_mean_{antena}"] = (weights * phases).sum(axis=1)
+        stats_cols[f"weighted_phase_std_{antena}"]  = np.sqrt(
+            (weights * (phases - stats_cols[f"weighted_phase_mean_{antena}"][:, None])**2).sum(axis=1)
+        )
+
+        # Dispersión angular (circular std): mide cuán "concentrada" está la fase
+        stats_cols[f"circular_mean_r_{antena}"] = np.sqrt(
+            (mags * np.cos(phases)).mean(axis=1)**2 +
+            (mags * np.sin(phases)).mean(axis=1)**2
+        ) / (mags.mean(axis=1) + 1e-9)   # entre 0 (disperso) y 1 (concentrado)
+
 
     X = pd.concat(
         [X, pd.DataFrame(stats_cols, index=X.index)],

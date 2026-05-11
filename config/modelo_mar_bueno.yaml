@@ -1,6 +1,6 @@
 # Data settings
-data_path: "data/raw/train_nt.csv" # Adjust based on your chosen dataset
-test_data_path: "data/raw/test_nolabels_nt.csv" # Ensure this matches the train data type
+data_path: "data/processed/train_lof_boxcox.csv" # Adjust based on your chosen dataset
+test_data_path: "data/processed/test_lof_boxcox.csv" # Ensure this matches the train data type
 target_col: "position"
 test_size: 0.2
 
