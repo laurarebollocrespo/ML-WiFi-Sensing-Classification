@@ -8,9 +8,11 @@ import os
 import pandas as pd
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.base import BaseEstimator
-from sklearn.metrics import accuracy_score, classification_report, f1_score, precision_score, recall_score
+from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, classification_report, f1_score, precision_score, recall_score
 from sklearn.utils.parallel import Parallel, delayed
 import joblib
+import wandb
+import matplotlib.pyplot as plt
 
 class MLTrainer:
     '''
@@ -110,33 +112,58 @@ class MLTrainer:
 
         y_pred = self.best_model.predict(X_val)
 
-        self.define_experiment(self.compute_metrics(y_val, y_pred))
+        self.define_experiment(self.compute_metrics(y_val, y_pred), y_val, y_pred)
 
-    def define_experiment(self, metrics: list[float]) -> None:
+
+    def define_experiment(self, metrics: list[float], y_val, y_pred) -> None:
         
         accuracy, f1_macro, precision_macro, recall_macro, classif_report = metrics
+        
         self.experiment_results = {
             "model_name": type(self.best_model).__name__,
-
             "best_hyperparameters": self.best_params,
-
-            "cross_validation": {
-                "scoring_metric": self.scoring,
-                "cv_folds": self.cv_folds,
-                "best_cv_score": self.best_cv_score
-            },
-
-            "validation_metrics": {
-                "accuracy": accuracy,
-                "f1_macro": f1_macro,
-                "precision_macro": precision_macro,
-                "recall_macro": recall_macro
-            },
-
-            "classification_report": classif_report
+            "validation_metrics": {"accuracy": accuracy, "f1_macro": f1_macro}
         }
 
-    
+        print("Initializing Weights & Biases run...")
+        wandb.init(
+            project="AA1",
+            entity="laura-rebollo-crespo-universitat-polit-cnica-de-catalunya",
+            name=f"{type(self.best_model).__name__}_f1-{f1_macro:.4f}",
+            config={
+                "model_name": type(self.best_model).__name__,
+                "cv_folds": self.cv_folds,
+                "scoring_metric": self.scoring,
+                **self.best_params
+            }
+        )
+
+        fig, ax = plt.subplots(figsize=(10, 8))
+        
+        disp = ConfusionMatrixDisplay.from_predictions(
+            y_val, 
+            y_pred, 
+            ax=ax, 
+            cmap='viridis',
+            colorbar=False
+        )
+        plt.title(f'Confusion Matrix: {type(self.best_model).__name__}', fontsize=16, pad=15)
+        plt.tight_layout()
+
+        # LOG IT TO W&B 
+        wandb.log({
+            "val_accuracy": accuracy,
+            "val_f1_macro": f1_macro,
+            "val_precision_macro": precision_macro,
+            "val_recall_macro": recall_macro,
+            "classification_report": wandb.Html(f"<pre>{classif_report}</pre>"),
+            
+            "scikit_learn_matrix": wandb.Image(fig) 
+        })
+        
+        plt.close(fig)
+
+
     def generate_base_filename(self) -> str:
 
         if not self.experiment_results:
@@ -158,29 +185,35 @@ class MLTrainer:
      
     def save(self) -> None:
         """
-        Saves both the model (.pkl) and the experiment (.json) using the exact same base name.
+        
         """
-        models_dir, experiments_dir = "outputs/models", "outputs/experiments"
-
+        models_dir = "outputs/models"
+        os.makedirs(models_dir, exist_ok=True)
         base_name = self.generate_base_filename()
 
-        #Save the Model
+        # Save the Model locally first so W&B can grab it
         model_filepath = f"{models_dir}/{base_name}.pkl"
-        print(f"Saving model to {model_filepath}...")
+        print(f"Saving model locally to {model_filepath}...")
         joblib.dump(self.best_model, model_filepath)
 
-        #Save the Experiment JSON
-        exp_filepath = f"{experiments_dir}/{base_name}.json"
-        print(f"Saving experiment to {exp_filepath}...")
-        with open(exp_filepath, "w") as f:
-            json.dump(self.experiment_results, f, indent=4)
+        # --- 3. UPLOAD MODEL TO W&B ---
+        print("Uploading model to W&B Cloud...")
+        model_artifact = wandb.Artifact(
+            name=f"{type(self.best_model).__name__}_model",
+            type="model",
+            description="Trained scikit-learn model"
+        )
+        model_artifact.add_file(model_filepath)
+        wandb.log_artifact(model_artifact)
+
 
     def save_submission(self, X_test: pd.DataFrame) -> None:
         """
-        Generates a Kaggle submission CSV using the same base filename 
-        as the model and experiment JSON.
+        Generates Kaggle predictions and uploads the CSV to W&B.
         """
-        submissions_dir: str = "outputs/submissions"
+        submissions_dir = "outputs/submissions"
+        os.makedirs(submissions_dir, exist_ok=True)
+        
         if self.best_model is None:
             raise ValueError("Model has not been trained yet.")
 
@@ -188,7 +221,6 @@ class MLTrainer:
         output_path = f"{submissions_dir}/{base_name}.csv"
 
         print("Generating Kaggle predictions...")
-        
         y_pred = self.best_model.predict(X_test)
 
         submission = pd.DataFrame({
@@ -197,5 +229,16 @@ class MLTrainer:
         })
 
         submission.to_csv(output_path, index=False)
-        print(f"Submission saved to: {output_path}")
+        print(f"Submission saved locally to: {output_path}")
 
+        # --- 4. UPLOAD CSV TO W&B ---
+        print("Uploading Kaggle submission to W&B Cloud...")
+        csv_artifact = wandb.Artifact(
+            name=f"{type(self.best_model).__name__}_submission",
+            type="predictions"
+        )
+        csv_artifact.add_file(output_path)
+        wandb.log_artifact(csv_artifact)
+
+        # --- 5. CLOSE THE W&B RUN ---
+        wandb.finish()
