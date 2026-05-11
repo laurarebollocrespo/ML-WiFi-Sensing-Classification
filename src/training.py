@@ -192,7 +192,7 @@ class MLTrainer:
      
     def save(self) -> None:
         """
-        
+        Saves the best model locally and uploads it to W&B as an artifact, then cleans up the local file.
         """
         models_dir = "outputs/models"
         os.makedirs(models_dir, exist_ok=True)
