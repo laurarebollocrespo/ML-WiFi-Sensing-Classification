@@ -1,0 +1,18 @@
+# Data settings
+data_path: "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col: "position"
+
+# Training settings
+model_name: "rfe"
+cv_folds: 3
+scoring: "f1_macro"
+
+param_grid:
+  # --- FROZEN STAGE 1 WINNERS (Making the internal RF fast) ---
+  estimator__n_estimators: [100]
+  estimator__max_depth: [10]
+  
+  # --- THE PARAMETERS WE ACTUALLY TUNE ---
+  n_features_to_select: [50]
+  step: [0.2]

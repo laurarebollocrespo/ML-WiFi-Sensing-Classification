@@ -1,0 +1,27 @@
+# ============================================================
+#  SVM — Polynomial kernel
+#  k(x,z) = (γ·xᵀz + r)^d
+#  degree=2 → quadratic decision boundary (captures pairwise interactions)
+#  degree=3 → cubic (usually the sweet spot; higher gets slow)
+#  coef0 (r) shifts the threshold for polynomial terms to matter.
+# ============================================================
+
+data_path:      "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col:     "position"
+test_size:      0.2
+
+add_magnitude_features: true
+use_pca:        false
+
+model_name: "svm"
+cv_folds:   5
+scoring:    "f1_macro"
+
+param_grid:
+  kernel:   ['poly']
+  degree:   [2, 3, 4]
+  C:        [0.1, 1.0, 10.0, 50.0]
+  gamma:    ['scale', 'auto', 0.01, 0.001]
+  coef0:    [0.0, 0.5, 1.0]
+  decision_function_shape: ['ovo']

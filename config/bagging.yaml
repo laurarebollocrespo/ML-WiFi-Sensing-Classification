@@ -1,0 +1,16 @@
+data_path: "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col: "position"
+models_dir: "outputs/models"
+experiments_dir: "outputs/experiments"
+submissions_dir: "outputs/submissions"
+
+model_name: "bagging"
+cv_folds: 5
+scoring: "f1_macro"
+
+param_grid:
+  n_estimators: [10, 50, 100, 200]
+  max_samples: [0.5, 0.8, 1.0]
+  max_features: [0.5, 0.8, 1.0]
+  bootstrap: [True, False]

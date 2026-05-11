@@ -1,0 +1,15 @@
+data_path: "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col: "position"
+
+
+model_name: "extra_trees"
+cv_folds: 5
+scoring: "f1_macro"
+
+param_grid:
+  n_estimators: [100, 300, 500, 800, 1000]
+  max_depth: [null, 10, 20, 30, 50]
+  min_samples_split: [2, 5, 10, 20]
+  max_features: ['sqrt', 'log2', null]
+  bootstrap: [True, False]

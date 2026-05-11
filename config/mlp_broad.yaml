@@ -1,0 +1,39 @@
+# ============================================================
+#  MLP — Multi-Layer Perceptron  (sklearn)
+#  Notation: (256,) = one hidden layer of 256 units
+#            (256, 128) = two hidden layers
+#            (256, 128, 64) = three hidden layers
+#
+#  alpha = L2 weight-decay regularisation
+#  'adaptive' lr halves the rate whenever train loss stops decreasing
+#  early_stopping holds out 10 % of train data to detect overfitting
+# ============================================================
+
+data_path:      "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col:     "position"
+test_size:      0.2
+
+add_magnitude_features: true
+use_pca:        false
+
+model_name: "mlp"
+cv_folds:   5
+scoring:    "f1_macro"
+
+param_grid:
+  hidden_layer_sizes:
+    - [128]
+    - [256]
+    - [512]
+    - [128, 64]
+    - [256, 128]
+    - [512, 256]
+    - [256, 128, 64]
+    - [512, 256, 128]
+  activation:    ['relu', 'tanh']
+  alpha:         [1.0e-5, 1.0e-4, 1.0e-3, 1.0e-2]
+  learning_rate: ['constant', 'adaptive']
+  max_iter:      [500]
+  early_stopping: [true]
+  random_state:  [42]
