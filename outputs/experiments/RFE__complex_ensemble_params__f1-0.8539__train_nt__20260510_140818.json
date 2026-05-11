@@ -1,0 +1,21 @@
+{
+    "model_name": "RFE",
+    "best_hyperparameters": {
+        "estimator__max_depth": 10,
+        "estimator__n_estimators": 100,
+        "n_features_to_select": 50,
+        "step": 0.2
+    },
+    "cross_validation": {
+        "scoring_metric": "f1_macro",
+        "cv_folds": 3,
+        "best_cv_score": 0.8434178235949732
+    },
+    "validation_metrics": {
+        "accuracy": 0.8533747090768037,
+        "f1_macro": 0.8539436780501802,
+        "precision_macro": 0.8572201609978606,
+        "recall_macro": 0.8534495261514021
+    },
+    "classification_report": "              precision    recall  f1-score   support\n\n           0       0.76      0.77      0.76       240\n           1       0.70      0.75      0.72       298\n           2       0.82      0.69      0.75       245\n           3       0.84      0.81      0.83       247\n           4       0.94      0.91      0.92       250\n           5       0.91      0.92      0.92       279\n           6       0.94      0.93      0.94       246\n           7       0.90      0.87      0.88       256\n           8       0.94      0.90      0.92       262\n           9       0.82      0.97      0.89       255\n\n    accuracy                           0.85      2578\n   macro avg       0.86      0.85      0.85      2578\nweighted avg       0.86      0.85      0.85      2578\n"
+}
