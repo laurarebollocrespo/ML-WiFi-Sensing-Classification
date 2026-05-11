@@ -27,6 +27,10 @@ from src.preprocessing import *
 from src.training import MLTrainer
 
 def build_stacking():
+    '''
+    Returns a StackingClassifier with Random Forest, SVM, and XGBoost as base estimators and Logistic Regression as the final estimator.
+    Options for base estimators: 
+    '''
     return StackingClassifier(
         estimators=[
             ('rf', RandomForestClassifier()),
@@ -39,6 +43,7 @@ def build_stacking():
         cv=3
     )
 
+
 def build_voting():
     return VotingClassifier(
         estimators=[
@@ -49,9 +54,10 @@ def build_voting():
         voting='soft'
     )
 
+
 def build_rfe():
     return RFE(
-        estimator=RandomForestClassifier()
+        estimator=RandomForestClassifier(n_jobs=1),
     )
 
 
@@ -100,14 +106,20 @@ def run_training(config_path: str) -> None:
 
     print(f"Loaded config from {config_path}")
     print(f"Model: {config['model_name']}")
-    print(config)
     
     #2-Preprocessing
-    data = preprocess_data(
-        filepath_train=config["data_path"],
-        filepath_test=config["test_data_path"],
-        target_col=config["target_col"]
-    )
+    if config.get("is_clean_data", False) == True:
+        data = load_clean_data(
+            filepath_train=config["data_path"],
+            filepath_test=config["test_data_path"],
+            target_col=config["target_col"]
+        )
+    else:
+        data = preprocess_data(
+            filepath_train=config["data_path"],
+            filepath_test=config["test_data_path"],
+            target_col=config["target_col"]
+        )
     
     #3-Modeling
     model = get_model(config["model_name"])
@@ -134,6 +146,25 @@ def run_training(config_path: str) -> None:
     trainer.save_submission(X_test=data["X_test"])
 
     print(f"Training completed. Model saved")  
+
+    if config["model_name"] == "rfe":
+        print("\n--- RFE FEATURE EXTRACTION ---")
+        survivor_mask = trainer.best_model.support_
+        
+        # Filter the train and test DataFrames
+        X_train_clean = data["X_train_full_final"].loc[:, survivor_mask]
+        X_test_clean = data["X_test"].loc[:, survivor_mask]
+        
+        # Re-attach the target column (y) to the training data
+        train_clean_final = X_train_clean.copy()
+        train_clean_final[config["target_col"]] = data["y_train_full"]
+        
+        train_clean_final.to_csv("data/processed/train_rfe_clean.csv", index=False)
+        X_test_clean.to_csv("data/processed/test_rfe_clean.csv", index=False)
+        
+        print(f"SUCCESS: Extracted {sum(survivor_mask)} features.")
+        print("Clean datasets saved as 'train_rfe_clean.csv' and 'test_rfe_clean.csv'!")
+        print(f"Winning columns: {list(X_train_clean.columns)}")
 
 
 @click.group()

@@ -9,6 +9,7 @@ import pandas as pd
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.base import BaseEstimator
 from sklearn.metrics import accuracy_score, classification_report, f1_score, precision_score, recall_score
+from sklearn.utils.parallel import Parallel, delayed
 import joblib
 
 class MLTrainer:
@@ -109,7 +110,6 @@ class MLTrainer:
 
         y_pred = self.best_model.predict(X_val)
 
-        print("hola")
         self.define_experiment(self.compute_metrics(y_val, y_pred))
 
     def define_experiment(self, metrics: list[float]) -> None:
@@ -149,7 +149,7 @@ class MLTrainer:
         param_string = "_".join([f"{k}-{str(v)}" for k, v in params.items()])
         if len(param_string) > 50:
             param_string = "complex_ensemble_params"
-            
+
         metric_string = f"f1-{metrics['f1_macro']:.4f}"
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         data_used = os.path.basename(self.data).replace(".csv", "")

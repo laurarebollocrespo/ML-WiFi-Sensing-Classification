@@ -4,7 +4,7 @@
 # 3- Entrenar un xgboost. En la param_grid, ponemos los mejores hiperparámetros encontrados
 
 # Asi no tarda la vida
-# 4- Entrenar el voting. En la param_grid, solo ponemos los hiperparámetros del meta-modelo (final_estimator), porque los otros ya los hemos fijado en los pasos anteriores (ara cv con ese)
+# 4- Entrenar el stacking. En la param_grid, solo ponemos los hiperparámetros del meta-modelo (final_estimator), porque los otros ya los hemos fijado en los pasos anteriores (ara cv con ese)
 
 
 # Data settings
@@ -12,11 +12,12 @@ data_path: "data/processed/train_rfe_clean.csv"
 test_data_path: "data/processed/test_rfe_clean.csv"
 target_col: "position"
 
-is_clean_data: True
+# --- THE BYPASS SWITCH ---
+is_clean_data: true
 
 # Training settings
-model_name: "voting"
-cv_folds: 5
+model_name: "stacking"
+cv_folds: 3
 scoring: "f1_macro"
 
 param_grid:
@@ -36,8 +37,4 @@ param_grid:
   xgb__subsample: [0.8]
   
   # --- THE PARAMETERS WE ACTUALLY TUNE ---
-  weights: 
-    - [1, 1, 1]  
-    - [2, 1, 1]  
-    - [1, 2, 1]  
-    - [1, 1, 2]
+  final_estimator__C: [0.1]

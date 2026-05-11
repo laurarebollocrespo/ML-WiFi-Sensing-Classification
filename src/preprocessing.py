@@ -19,20 +19,40 @@ def preprocess_data(filepath_train: str, filepath_test: str, target_col: str) ->
     )
 
     scaler_eval = RobustScaler().fit(X_train_raw)
-    X_train = scaler_eval.transform(X_train_raw)
-    X_val = scaler_eval.transform(X_val_raw)
-    X_train_full = scaler_eval.transform(X_train_full_raw)
+    X_train = pd.DataFrame(
+        scaler_eval.transform(X_train_raw),
+        columns=X_train_raw.columns,
+        index=X_train_raw.index
+    )
+    X_val = pd.DataFrame(
+        scaler_eval.transform(X_val_raw),
+        columns=X_val_raw.columns,
+        index=X_val_raw.index
+    )
+    X_train_full = pd.DataFrame(
+        scaler_eval.transform(X_train_full_raw),
+        columns=X_train_full_raw.columns,
+        index=X_train_full_raw.index
+    )
 
     # --- Final scaler (fit on FULL training data) ---
     scaler_full = RobustScaler().fit(X_train_full_raw)
-    X_train_full_final = scaler_full.transform(X_train_full_raw)
+    X_train_full_final = pd.DataFrame(
+        scaler_full.transform(X_train_full_raw), 
+        columns=X_train_full_raw.columns,
+        index=X_train_full_raw.index
+    )
 
     # TEST DATA (scaled with full-data scaler)
     X_test = load_test_data(filepath_test)
     X_test = create_features(X_test)
     X_test = X_test.drop(columns=["seq_ctrl"])
-    X_test = scaler_full.transform(X_test)
-
+    X_test = pd.DataFrame(
+        scaler_full.transform(X_test), 
+        columns=X_test.columns,
+        index=X_test.index
+    )
+    
     print("Preprocessing complete. Scaled training and test data ready for modeling.")
     return {
         "X_train": X_train,
@@ -148,6 +168,40 @@ def create_features(X: pd.DataFrame) -> pd.DataFrame:
         axis=1
     )
 
+
     X = X.copy()
 
     return X
+
+
+def load_clean_data(filepath_train: str, filepath_test: str, target_col: str) -> dict[str, pd.DataFrame | pd.Series]:
+    """
+    Bypass function for data that has already been feature-engineered, scaled, and passed through RFE.
+    """
+    print(f"Loading CLEAN/RFE data from {filepath_train}...")
+    
+    # 1. Load train data
+    df_train = pd.read_csv(filepath_train)
+    X_train_full = df_train.drop(columns=[target_col])
+    y_train_full = df_train[target_col]
+
+    # 2. Split for evaluation
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train_full, y_train_full, test_size=0.2, random_state=1, stratify=y_train_full
+    )
+
+    # 3. Load test data
+    X_test = pd.read_csv(filepath_test)
+
+    print("Bypassing feature creation and scaling. Ready for modeling.")
+    
+    return {
+        "X_train": X_train,
+        "y_train": y_train,
+        "X_val": X_val,
+        "y_val": y_val,
+        "X_train_full": X_train_full,
+        "y_train_full": y_train_full,
+        "X_train_full_final": X_train_full, # Already scaled from previous run
+        "X_test": X_test
+    }
