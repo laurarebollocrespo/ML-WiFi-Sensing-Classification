@@ -206,6 +206,13 @@ class MLTrainer:
         model_artifact.add_file(model_filepath)
         wandb.log_artifact(model_artifact)
 
+        if os.path.exists(model_filepath):
+            os.remove(model_filepath)
+            os.rmdir(models_dir)
+            print("Deleted:", model_filepath)
+        else:
+            print("File not found:", model_filepath)
+
 
     def save_submission(self, X_test: pd.DataFrame) -> None:
         """
@@ -231,7 +238,7 @@ class MLTrainer:
         submission.to_csv(output_path, index=False)
         print(f"Submission saved locally to: {output_path}")
 
-        # --- 4. UPLOAD CSV TO W&B ---
+        # UPLOAD CSV TO W&B ---
         print("Uploading Kaggle submission to W&B Cloud...")
         csv_artifact = wandb.Artifact(
             name=f"{type(self.best_model).__name__}_submission",
