@@ -8,10 +8,12 @@ import os
 import pandas as pd
 import numpy as np
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, classification_report, f1_score, precision_score, recall_score
+from sklearn.pipeline import make_pipeline
 from sklearn.utils.parallel import Parallel, delayed
 import joblib
 import torch
@@ -275,9 +277,15 @@ class SupervisedClusteringWrapper(BaseEstimator, ClassifierMixin):
         
         '''
         if self.model_name == 'kmeans':
-            self.model = KMeans(n_clusters=self.n_clusters)
+            self.model = make_pipeline(
+                PCA(n_components=20), 
+                KMeans(n_clusters=self.n_clusters, max_iter=300),
+            )
         elif self.model_name == 'gmm':
-            self.model = GaussianMixture(n_components=self.n_clusters)
+            self.model = make_pipeline(
+                PCA(n_components=20),
+                GaussianMixture(n_components=self.n_clusters, max_iter=300)
+            )
             
         clusters = self.model.fit_predict(X)
         

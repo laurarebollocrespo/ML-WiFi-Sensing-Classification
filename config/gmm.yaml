@@ -1,8 +1,9 @@
 # --- DATA SETTINGS ---
-data_path: "data/processed/train_rfe_clean.csv"
-test_data_path: "data/processed/test_rfe_clean.csv"
+data_path: "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
 target_col: "position"
-is_clean_data: true
+test_size: 0.2
+
 
 # --- TRAINING SETTINGS ---
 model_name: "gmm"
