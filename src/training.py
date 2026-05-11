@@ -6,11 +6,16 @@ from datetime import datetime
 import os
 
 import pandas as pd
+import numpy as np
+from sklearn.cluster import KMeans
+from sklearn.mixture import GaussianMixture
 from sklearn.model_selection import GridSearchCV, StratifiedKFold
-from sklearn.base import BaseEstimator
+from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, classification_report, f1_score, precision_score, recall_score
 from sklearn.utils.parallel import Parallel, delayed
 import joblib
+import torch
+import torch
 import wandb
 import matplotlib.pyplot as plt
 
@@ -51,7 +56,7 @@ class MLTrainer:
 
         self.experiment_results = {}
 
-    def fit_and_search(self, X_train, y_train) -> None:
+    def fit_and_search(self, X_train: pd.DataFrame, y_train: pd.Series) -> None:
         '''
         Performs hyperparameter search using GridSearchCV and fits the best model on the training data.
         Args:
@@ -80,7 +85,7 @@ class MLTrainer:
         print(f"Best CV Score: {self.best_cv_score:.4f}")
         print(f"Best Parameters: {self.best_params}")
 
-    def refit_full(self, X_full, y_full) -> None:
+    def refit_full(self, X_full: pd.DataFrame, y_full: pd.Series) -> None:
         """Refit best model on train+val combined before submission."""
 
         print("Refitting best model on full training data (train + val)...")
@@ -90,7 +95,7 @@ class MLTrainer:
         self.best_model.set_params(**self.best_params)
         self.best_model.fit(X_full, y_full)
 
-    def compute_metrics(self, y_real: list, y_pred: list) -> list[float]:
+    def compute_metrics(self, y_real: pd.Series, y_pred: pd.Series) -> list[float]:
         # By default it will compute the binary recall of class 1, we can specify which class do we want by using this parameter 
         #recall_class_1 =recall_score(y_real,y_pred, pos_label=1)
         #f1_class_1 =f1_score(y_real,y_pred, pos_label=1)
@@ -101,7 +106,7 @@ class MLTrainer:
         classif_report = classification_report(y_real, y_pred)
         return [accuracy, f1_macro, precision_macro, recall_macro, classif_report]
 
-    def evaluate(self, X_val, y_val) -> None:
+    def evaluate(self, X_val: pd.DataFrame, y_val: pd.Series) -> None:
         '''
         Evaluates the best model on the validation data and defines the experiment.
         ''' 
@@ -115,7 +120,7 @@ class MLTrainer:
         self.define_experiment(self.compute_metrics(y_val, y_pred), y_val, y_pred)
 
 
-    def define_experiment(self, metrics: list[float], y_val, y_pred) -> None:
+    def define_experiment(self, metrics: list[float], y_val: pd.Series, y_pred: pd.Series) -> None:
         
         accuracy, f1_macro, precision_macro, recall_macro, classif_report = metrics
         
@@ -249,3 +254,47 @@ class MLTrainer:
 
         # --- 5. CLOSE THE W&B RUN ---
         wandb.finish()
+
+
+class SupervisedClusteringWrapper(BaseEstimator, ClassifierMixin):
+    '''
+    
+    '''
+    model_name: str
+    n_clusters: int
+    model: BaseEstimator
+    label_map: dict[int, int] # Maps unsupervised cluster IDs to actual class labels based on majority vote
+
+    def __init__(self, model_name='kmeans', n_clusters=10):
+        self.model_name = model_name
+        self.n_clusters = n_clusters
+        self.label_map = {}
+        
+    def fit(self, X: pd.DataFrame, y: pd.Series) -> 'SupervisedClusteringWrapper':
+        '''
+        
+        '''
+        if self.model_name == 'kmeans':
+            self.model = KMeans(n_clusters=self.n_clusters)
+        elif self.model_name == 'gmm':
+            self.model = GaussianMixture(n_components=self.n_clusters)
+            
+        clusters = self.model.fit_predict(X)
+        
+        # Map unsupervised clusters to actual labels (y) based on majority vote
+        for cluster_id in np.unique(clusters):
+            true_labels = y[clusters == cluster_id]
+            if len(true_labels) > 0:
+                self.label_map[cluster_id] = true_labels.mode()[0]
+            else:
+                self.label_map[cluster_id] = 0
+        return self
+        
+    def predict(self, X: pd.DataFrame):
+        '''
+        
+        '''
+        clusters = self.model.predict(X)
+        # Map them back to correct labels
+        return np.array([self.label_map[c] for c in clusters])
+    

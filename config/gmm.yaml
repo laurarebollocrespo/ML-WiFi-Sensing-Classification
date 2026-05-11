@@ -1,0 +1,15 @@
+# --- DATA SETTINGS ---
+data_path: "data/processed/train_rfe_clean.csv"
+test_data_path: "data/processed/test_rfe_clean.csv"
+target_col: "position"
+is_clean_data: true
+
+# --- TRAINING SETTINGS ---
+model_name: "gmm"
+cv_folds: 3
+scoring: "f1_macro"
+
+# --- HYPERPARAMETERS ---
+param_grid:
+  # GMMs look at the shape/variance of the data, not just the physical distance.
+  n_clusters: [10, 15, 20, 30]

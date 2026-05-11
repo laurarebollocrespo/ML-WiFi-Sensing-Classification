@@ -24,7 +24,7 @@ from sklearn.feature_selection import RFE
 from xgboost import XGBClassifier
 import yaml
 from src.preprocessing import *
-from src.training import MLTrainer
+from src.training import *
 
 def build_stacking():
     '''
@@ -87,7 +87,16 @@ MODEL_REGISTRY = {
     "stacking": build_stacking,
     "voting": build_voting,
     "rfe": build_rfe,
+
+    # Clustering
+    "kmeans": lambda: SupervisedClusteringWrapper(model_name='kmeans'),
+    "gmm": lambda: SupervisedClusteringWrapper(model_name='gmm'),
+    
+    # Deep Learning 
+    # "cnn_2d": CNNWrapper,
+    # "df_cnn": DFCNNWrapper # (You would build this similarly, splitting the inputs to 2 and 2)
 }
+
 
 def get_model(model_name: str) -> BaseEstimator:
     """Retrieves and initializes the model from the registry."""

@@ -1,0 +1,17 @@
+# --- DATA SETTINGS ---
+# Assuming you want to use your fast, clean dataset from the RFE!
+data_path: "data/processed/train_rfe_clean.csv"
+test_data_path: "data/processed/test_rfe_clean.csv"
+target_col: "position"
+is_clean_data: true  # Uses your bypass function so it doesn't crash!
+
+# --- TRAINING SETTINGS ---
+model_name: "kmeans"
+cv_folds: 3
+scoring: "f1_macro"
+
+# --- HYPERPARAMETERS ---
+param_grid:
+  # The wrapper will pass these down to the internal model.
+  # Testing over-clustering to let the wrapper map multiple groups to one label.
+  n_clusters: [10, 15, 20, 30]
