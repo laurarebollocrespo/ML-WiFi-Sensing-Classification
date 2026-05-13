@@ -124,7 +124,7 @@ def run_training(config_path: str) -> None:
             target_col=config["target_col"]
         )
     else:
-        data = preprocess_data(
+        data = preprocess_data(                             #nos cargamos el preprocessing y que lo haga todo datasets
             filepath_train=config["data_path"],
             filepath_test=config["test_data_path"],
             target_col=config["target_col"]

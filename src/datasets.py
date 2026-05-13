@@ -3,6 +3,7 @@ import numpy as np
 from scipy import stats
 from sklearn.neighbors import LocalOutlierFactor
 import os
+from preprocessing import create_features
 
 
 def load_data(file_path, sep=";"):
@@ -30,31 +31,7 @@ def remove_outliers_lof(df, feature_cols, contamination=0.1):
     return df[outliers == 1]
 
 
-def add_features(df):
-    """Add new features: statistical measures of I/Q signals."""
-    # Antenna 1 I/Q columns
-    i_cols_1 = [f"I{i}_1" for i in range(64)]
-    q_cols_1 = [f"Q{i}_1" for i in range(64)]
-    # Antenna 2 I/Q columns
-    i_cols_2 = [f"I{i}_2" for i in range(64)]
-    q_cols_2 = [f"Q{i}_2" for i in range(64)]
 
-    # Magnitude for antenna 1
-    mag_1 = np.sqrt(df[i_cols_1].values ** 2 + df[q_cols_1].values ** 2)
-    df["mean_mag_1"] = mag_1.mean(axis=1)
-    df["std_mag_1"] = mag_1.std(axis=1)
-    df["max_mag_1"] = mag_1.max(axis=1)
-    df["min_mag_1"] = mag_1.min(axis=1)
-
-    # Magnitude for antenna 2
-    mag_2 = np.sqrt(df[i_cols_2].values ** 2 + df[q_cols_2].values ** 2)
-    df["mean_mag_2"] = mag_2.mean(axis=1)
-    df["std_mag_2"] = mag_2.std(axis=1)
-    df["max_mag_2"] = mag_2.max(axis=1)
-    df["min_mag_2"] = mag_2.min(axis=1)
-
-    # Phase difference or something, but keep simple
-    return df
 
 
 def apply_box_cox(df) -> pd.DataFrame:
@@ -91,19 +68,19 @@ def process_datasets():
 
     # 2. IQR outliers removed
     train_iqr = remove_outliers_iqr(train.copy(), feature_cols)
-    test_iqr = remove_outliers_iqr(test.copy(), feature_cols)
+    test_iqr = test.copy()
     train_iqr.to_csv(os.path.join(processed_dir, "train_iqr.csv"), sep=";", index=False)
     test_iqr.to_csv(os.path.join(processed_dir, "test_iqr.csv"), sep=";", index=False)
 
     # 3. LOF outliers removed
     train_lof = remove_outliers_lof(train.copy(), feature_cols)
-    test_lof = remove_outliers_lof(test.copy(), feature_cols)
+    test_lof = test.copy()
     train_lof.to_csv(os.path.join(processed_dir, "train_lof.csv"), sep=";", index=False)
     test_lof.to_csv(os.path.join(processed_dir, "test_lof.csv"), sep=";", index=False)
 
     # 4. With new features
-    train_feat = add_features(train.copy())
-    test_feat = add_features(test.copy())
+    train_feat = create_features(train.copy())
+    test_feat = create_features(test.copy())
     train_feat.to_csv(
         os.path.join(processed_dir, "train_features.csv"), sep=";", index=False
     )
@@ -123,7 +100,7 @@ def process_datasets():
 
     # 6. IQR outliers removed + Box-Cox
     train_iqr_boxcox = apply_box_cox(remove_outliers_iqr(train.copy(), feature_cols))
-    test_iqr_boxcox = apply_box_cox(remove_outliers_iqr(test.copy(), feature_cols))
+    test_iqr_boxcox = apply_box_cox(test.copy())
     train_iqr_boxcox.to_csv(
         os.path.join(processed_dir, "train_iqr_boxcox.csv"), sep=";", index=False
     )
@@ -133,7 +110,7 @@ def process_datasets():
 
     # 7. LOF outliers removed + Box-Cox
     train_lof_boxcox = apply_box_cox(remove_outliers_lof(train.copy(), feature_cols))
-    test_lof_boxcox = apply_box_cox(remove_outliers_lof(test.copy(), feature_cols))
+    test_lof_boxcox = apply_box_cox(test.copy())
     train_lof_boxcox.to_csv(
         os.path.join(processed_dir, "train_lof_boxcox.csv"), sep=";", index=False
     )
@@ -142,8 +119,8 @@ def process_datasets():
     )
 
     # 8. With new features + Box-Cox
-    train_feat_boxcox = apply_box_cox(add_features(train.copy()))
-    test_feat_boxcox = apply_box_cox(add_features(test.copy()))
+    train_feat_boxcox = apply_box_cox(create_features(train.copy()))
+    test_feat_boxcox = apply_box_cox(create_features(test.copy()))
     train_feat_boxcox.to_csv(
         os.path.join(processed_dir, "train_features_boxcox.csv"), sep=";", index=False
     )
@@ -153,10 +130,10 @@ def process_datasets():
 
     # 9. With new features + IQR outliers removed + Box-Cox
     train_feat_iqr_boxcox = apply_box_cox(
-        add_features(remove_outliers_iqr(train.copy(), feature_cols))
+        create_features(remove_outliers_iqr(train.copy(), feature_cols))
     )
     test_feat_iqr_boxcox = apply_box_cox(
-        add_features(remove_outliers_iqr(test.copy(), feature_cols))
+        create_features(test.copy())
     )
     train_feat_iqr_boxcox.to_csv(
         os.path.join(processed_dir, "train_features_iqr_boxcox.csv"),
@@ -171,10 +148,10 @@ def process_datasets():
 
     # 10. With new features + LOF outliers removed + Box-Cox
     train_feat_lof = apply_box_cox(
-        add_features(remove_outliers_lof(train.copy(), feature_cols))
+        create_features(remove_outliers_lof(train.copy(), feature_cols))
     )
     test_feat_lof_boxcox = apply_box_cox(
-        add_features(remove_outliers_lof(test.copy(), feature_cols))
+        create_features(test.copy())
     )
     train_feat_lof.to_csv(
         os.path.join(processed_dir, "train_features_lof_boxcox.csv"),
@@ -188,8 +165,8 @@ def process_datasets():
     )
 
     # 11. With new features + LOF outliers removed
-    train_feat_lof = add_features(remove_outliers_lof(train.copy(), feature_cols))
-    test_feat_lof = add_features(
+    train_feat_lof = create_features(remove_outliers_lof(train.copy(), feature_cols))
+    test_feat_lof = create_features(
         test.copy()
     )  # para hacer el test no podemos quitar outliers, pero luego para entrenar con todo el dataset si
     train_feat_lof.to_csv(

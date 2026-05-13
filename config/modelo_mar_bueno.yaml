@@ -9,6 +9,9 @@ model_name: "svm"
 cv_folds: 5
 scoring: "f1_macro"
 
+is_clean_data: false
+outlier_method: lof 
+
 # Hyperparameter Search Space
 param_grid:
   kernel: ['rbf']
