@@ -1,15 +1,12 @@
-# Data settings
 data_path: "data/raw/train_nt.csv"
 test_data_path: "data/raw/test_nolabels_nt.csv"
 target_col: "position"
-test_size: 0.2
 
-# Training settings
 model_name: "lda"
 cv_folds: 5
 scoring: "f1_macro"
 
-# Hyperparameter Search Space
+
 param_grid:
-  solver: ['lsqr']
-  shrinkage: [null, 'auto', 0.1, 0.5, 0.9]
+  solver: ["lsqr", "eigen"]
+  shrinkage: [0.0, 0.5, 1.0]

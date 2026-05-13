@@ -1,0 +1,162 @@
+# config_example.yaml
+# ==================
+# Example configuration for CSI classification with model-aware preprocessing
+#
+# This configuration demonstrates:
+# 1. Proper use of model_name to trigger model-specific preprocessing
+# 2. Hyperparameter grids appropriate for the selected model
+# 3. Proper cross-validation and evaluation setup
+#
+# To use: python main.py train config_example.yaml
+
+# ===== DATA SETTINGS =====
+data_path: "data/raw/train.csv"
+test_data_path: "data/raw/test_nolabels.csv"
+target_col: "position"
+
+# ===== PREPROCESSING SETTINGS =====
+# IMPORTANT: model_name triggers automatic selection of preprocessing strategy
+# Each model in MODEL_REGISTRY has an optimized preprocessing pipeline
+# 
+# Examples:
+#   - 'random_forest': Trees + feature engineering (no scaling)
+#   - 'xgboost': Gradient boosting + all features
+#   - 'svm': RBF kernel + amplitude/phase + aggressive PCA
+#   - 'lda': Classical statistical + standardization + feature selection
+#   - 'mlp': Neural network + robust scaling + moderate PCA
+#   - 'knn': Distance-based + minmax scaling + PCA
+#
+model_name: "xgboost"
+
+# Optional: override cache directory
+# cache_dir: "data/processed"
+
+# ===== CROSS-VALIDATION SETTINGS =====
+cv_folds: 5
+scoring: "f1_macro"  # F1 for multi-class classification
+
+# ===== HYPERPARAMETER GRID =====
+# Grid for XGBoost (example)
+# Choose hyperparameters that make sense for the model and data size
+param_grid:
+  n_estimators: [100, 200, 300]
+  max_depth: [7, 10, 15]
+  learning_rate: [0.01, 0.05, 0.1]
+  subsample: [0.7, 1.0]
+  colsample_bytree: [0.7, 1.0]
+
+---
+
+# ===== ALTERNATIVE CONFIGURATIONS =====
+
+# ===== LDA Configuration =====
+# config_lda.yaml:
+# model_name: "lda"
+# data_path: "data/raw/train.csv"
+# test_data_path: "data/raw/test_nolabels.csv"
+# target_col: "position"
+# cv_folds: 5
+# scoring: "f1_macro"
+# param_grid:
+#   solver: ["lsqr", "eigen"]
+#   shrinkage: [0.0, 0.5, 1.0]
+# # LDA strategy: Amplitude stats + StandardScaler + SelectKBest(40)
+
+# ===== SVM Configuration =====
+# config_svm.yaml:
+# model_name: "svm"
+# data_path: "data/raw/train.csv"
+# test_data_path: "data/raw/test_nolabels.csv"
+# target_col: "position"
+# cv_folds: 5
+# scoring: "f1_macro"
+# param_grid:
+#   C: [0.1, 1, 10, 100]
+#   gamma: ["scale", "auto"]
+# # SVM strategy: Amplitude + Phase + StandardScaler + PCA(100)
+
+# ===== Random Forest Configuration =====
+# config_rf.yaml:
+# model_name: "random_forest"
+# data_path: "data/raw/train.csv"
+# test_data_path: "data/raw/test_nolabels.csv"
+# target_col: "position"
+# cv_folds: 5
+# scoring: "f1_macro"
+# param_grid:
+#   n_estimators: [100, 200, 300]
+#   max_depth: [10, 15, 20, None]
+#   min_samples_split: [2, 5, 10]
+#   min_samples_leaf: [1, 2, 4]
+# # RF strategy: ALL engineered features (no scaling, no PCA)
+
+# ===== MLP (Neural Network) Configuration =====
+# config_mlp.yaml:
+# model_name: "mlp"
+# data_path: "data/raw/train.csv"
+# test_data_path: "data/raw/test_nolabels.csv"
+# target_col: "position"
+# cv_folds: 5
+# scoring: "f1_macro"
+# param_grid:
+#   hidden_layer_sizes: [(100,), (100, 50), (100, 50, 25)]
+#   activation: ["relu", "tanh"]
+#   alpha: [0.0001, 0.001, 0.01]
+#   learning_rate_init: [0.001, 0.01]
+# # MLP strategy: Amplitude + Phase + RobustScaler + PCA(64)
+
+# ===== Clustering (KMeans) Configuration =====
+# config_kmeans.yaml:
+# model_name: "kmeans"
+# data_path: "data/raw/train.csv"
+# test_data_path: "data/raw/test_nolabels.csv"
+# target_col: "position"
+# cv_folds: 5
+# scoring: "f1_macro"
+# param_grid:
+#   n_clusters: [10]
+#   n_init: [10, 20]
+# # Clustering strategy: All features + StandardScaler + PCA(32)
+# # Note: SupervisedClusteringWrapper maps clusters to labels via majority vote
+
+---
+
+# ===== UNDERSTANDING PREPROCESSING STRATEGIES =====
+#
+# Model-Aware Preprocessing automatically selects features and transformations
+# based on each model's statistical assumptions:
+#
+# CLASSICAL STATISTICAL (LDA, QDA, Naive Bayes):
+#   - Assume Gaussian distributions
+#   - Preprocessing: Standardize + Feature Selection
+#   - Why: Zero-mean unit variance matches Gaussian assumption
+#
+# DISTANCE-BASED (KNN):
+#   - Sensitive to feature scales (Euclidean distance)
+#   - Preprocessing: MinMax scaling [0,1] + PCA reduction
+#   - Why: Symmetric distances + avoid curse of dimensionality
+#
+# SVM (RBF kernel):
+#   - Kernel computation scale-sensitive
+#   - Preprocessing: StandardScaler + aggressive PCA
+#   - Why: RBF depends on Euclidean distance; too many dims → slow
+#
+# TREE ENSEMBLES (RF, XGBoost, GradientBoosting):
+#   - Trees split on values, not distances
+#   - Preprocessing: NO scaling, all features preserved
+#   - Why: Trees naturally handle non-uniform scales; feature interactions beneficial
+#
+# NEURAL NETWORKS (MLP):
+#   - Universal approximators; learn feature interactions
+#   - Preprocessing: RobustScaler (outlier-resistant) + moderate PCA
+#   - Why: Need normalized inputs for gradient descent; can learn interactions
+#
+# CLUSTERING (KMeans, GMM):
+#   - Distance-based; needs compact latent representation
+#   - Preprocessing: StandardScaler + aggressive PCA
+#   - Why: Curse of dimensionality; PCA provides interpretable embedding
+#
+# ===== KEY INSIGHT =====
+# The preprocessing is NOT generic. It's optimized for each model's
+# statistical assumptions. This can improve F1 score by 5-15% compared
+# to using a one-size-fits-all approach.

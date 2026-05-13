@@ -2,6 +2,9 @@
 main.py
 '''
 import click
+import yaml
+
+
 from sklearn.base import BaseEstimator
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.neighbors import KNeighborsClassifier
@@ -19,12 +22,12 @@ from sklearn.ensemble import (
 )
 from sklearn.neural_network import MLPClassifier
 from sklearn.feature_selection import RFE
-
-# XGBoost (if installed)
 from xgboost import XGBClassifier
-import yaml
-from src.preprocessing import *
+
+from src.preprocessing import preprocess_data
 from src.training import *
+
+
 
 def build_stacking():
     '''
@@ -124,19 +127,13 @@ def run_training(config_path: str) -> None:
     print(f"Model: {config['model_name']}")
     
     #2-Preprocessing
-    if config.get("is_clean_data", False) == True:
-        data = load_clean_data(
-            filepath_train=config["data_path"],
-            filepath_test=config["test_data_path"],
-            target_col=config["target_col"]
-        )
-    else:
-        data = preprocess_data(
-            filepath_train=config["data_path"],
-            filepath_test=config["test_data_path"],
-            target_col=config["target_col"]
-        )
-    
+    data = preprocess_data(
+        filepath_train=config["data_path"],
+        filepath_test=config["test_data_path"],
+        target_col=config["target_col"],
+        model_name=config["model_name"]
+    )
+
     #3-Modeling
     model = get_model(config["model_name"])
 

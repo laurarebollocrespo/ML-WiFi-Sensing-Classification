@@ -133,17 +133,20 @@ class MLTrainer:
         }
 
         print("Initializing Weights & Biases run...")
-        wandb.init(
-            project="AA1",
-            entity="laura-rebollo-crespo-universitat-polit-cnica-de-catalunya",
-            name=f"{type(self.best_model).__name__}_f1-{f1_macro:.4f}",
-            config={
-                "model_name": type(self.best_model).__name__,
-                "cv_folds": self.cv_folds,
-                "scoring_metric": self.scoring,
-                **self.best_params
-            }
-        )
+        try:        
+            wandb.init(
+                project="AA1",
+                entity="laura-rebollo-crespo-universitat-polit-cnica-de-catalunya",
+                name=f"{type(self.best_model).__name__}_f1-{f1_macro:.4f}",
+                config={
+                    "model_name": type(self.best_model).__name__,
+                    "cv_folds": self.cv_folds,
+                    "scoring_metric": self.scoring,
+                    **self.best_params
+                }
+            )
+        except Exception as e:
+            print(f"Warning: W&B initialization failed ({e}). Continuing without W&B logging.")
 
         fig, ax = plt.subplots(figsize=(10, 8))
         
@@ -215,7 +218,6 @@ class MLTrainer:
 
         if os.path.exists(model_filepath):
             os.remove(model_filepath)
-            os.rmdir(models_dir)
             print("Deleted:", model_filepath)
         else:
             print("File not found:", model_filepath)

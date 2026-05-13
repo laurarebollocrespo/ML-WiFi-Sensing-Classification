@@ -1,0 +1,9 @@
+model_name: "svm"
+data_path: "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col: "position"
+cv_folds: 2
+scoring: "f1_macro"
+param_grid:
+  C: [10, 15]
+  gamma: ["scale", "auto"]
