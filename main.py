@@ -79,6 +79,13 @@ MODEL_REGISTRY = {
 
     # Boosting (external)
     "xgboost": XGBClassifier,
+    "xgboost_gpu": lambda **params: XGBClassifier(
+        tree_method="gpu_hist",
+        predictor="gpu_predictor",
+        gpu_id=0,
+        **params
+    ),
+    # 
 
     # Neural Nets
     "mlp": MLPClassifier,
