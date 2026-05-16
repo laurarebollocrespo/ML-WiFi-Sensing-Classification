@@ -11,14 +11,31 @@ import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.mixture import GaussianMixture
-from sklearn.model_selection import GridSearchCV, StratifiedKFold
+from sklearn.model_selection import GridSearchCV, StratifiedKFold, KFold
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, classification_report, f1_score, precision_score, recall_score
+from sklearn.metrics import (
+    ConfusionMatrixDisplay,
+    accuracy_score,
+    classification_report,
+    confusion_matrix,
+    f1_score,
+    precision_score,
+    recall_score,
+)
 from sklearn.pipeline import make_pipeline
 from sklearn.utils.parallel import Parallel, delayed
 import joblib
 import wandb
 import matplotlib.pyplot as plt
+from matplotlib import patches
+
+
+from sklearn.metrics import silhouette_score
+
+def silhouette_scorer(estimator, X, y=None):
+    # Use the wrapper's predict() to get cluster labels
+    labels = estimator.predict(X)
+    return silhouette_score(X, labels)
 
 class MLTrainer:
     '''
@@ -57,6 +74,11 @@ class MLTrainer:
 
         self.experiment_results = {}
 
+
+    def _is_clustering(self):
+        return isinstance(self.model, SupervisedClusteringWrapper)
+
+
     def fit_and_search(self, X_train: pd.DataFrame, y_train: pd.Series) -> None:
         '''
         Performs hyperparameter search using GridSearchCV and fits the best model on the training data.
@@ -64,15 +86,21 @@ class MLTrainer:
             X_train: Training features
             y_train: Training labels
         '''
-        print(f"Searching for best hyperparameters using {self.cv_folds}-fold Stratified CV...")
+        if self._is_clustering():
+            cv = KFold(n_splits=self.cv_folds, shuffle=True, random_state=42)
+            scoring = silhouette_scorer
+        else:
+            cv = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=42)
+            scoring = self.scoring
+
+            print(f"Searching for best hyperparameters using {self.cv_folds}-fold {cv.__class__.__name__}...")
         
-        cv_strategy = StratifiedKFold(n_splits=self.cv_folds, shuffle=True, random_state=1)
-        
+
         search = GridSearchCV(
             estimator=self.model,
             param_grid=self.param_grid,
-            cv=cv_strategy,
-            scoring=self.scoring,
+            cv=cv,
+            scoring=scoring,
             n_jobs=-1,
             verbose=3
         )
@@ -155,6 +183,8 @@ class MLTrainer:
         )
         plt.title(f'Confusion Matrix: {type(self.best_model).__name__}', fontsize=16, pad=15)
         plt.tight_layout()
+        spatial = self.plot_spatial_confusion(y_val, y_pred)
+
 
         # LOG IT TO W&B 
         wandb.log({
@@ -164,10 +194,92 @@ class MLTrainer:
             "val_recall_macro": recall_macro,
             "classification_report": wandb.Html(f"<pre>{classif_report}</pre>"),
             
-            "scikit_learn_matrix": wandb.Image(fig) 
+            "scikit_learn_matrix": wandb.Image(fig) ,
+            "spatial_confusion_matrix": wandb.Image(spatial)
+
         })
         
         plt.close(fig)
+
+    def plot_spatial_confusion(self, y_true: pd.Series, y_pred: pd.Series) -> plt.Figure:
+        '''
+        Plots a spatial confusion matrix.
+        Args:
+            y_true: True labels
+            y_pred: Predicted labels
+        '''
+        # 1. Define physical coordinates (radius, angle_in_degrees)
+        polar_coords = {
+            0: (2, 0),   1: (2, 45),  2: (2, 90),  3: (2, 135), 4: (2, 180),
+            5: (5, 0),   6: (5, 45),  7: (5, 90),  8: (5, 135), 9: (5, 180)
+        }
+        
+        # Convert polar to Cartesian (x, y) coordinates for plotting
+        coords = {}
+        for label, (r, theta) in polar_coords.items():
+            rad = np.radians(theta)
+            coords[label] = (r * np.cos(rad), r * np.sin(rad))
+            
+        # Calculate standard confusion matrix
+        cm = confusion_matrix(y_true, y_pred, labels=range(10))
+        
+        fig, ax = plt.subplots(figsize=(12, 8))
+        
+        # 2. Draw the Tracking Unit (centered at origin, pointing outward)
+        tracking_unit = patches.Rectangle((-1.5, -1.5), 3, 1.5, color='black', zorder=5)
+        ax.add_patch(tracking_unit)
+        ax.text(0, -0.75, 'Tracking\nunit', color='white', ha='center', va='center', weight='bold', zorder=6)
+        
+        # 3. Draw the background dashed guidelines
+        for label in [5, 6, 7, 8, 9]:
+            x, y = coords[label]
+            ax.plot([0, x], [0, y], color='black', linestyle='--', alpha=0.6, zorder=1)
+            
+        # 4. Plot the position nodes (0 through 9)
+        for label, (x, y) in coords.items():
+            ax.plot(x, y, 'o', markersize=25, color='white', markeredgecolor='black', zorder=4)
+            ax.text(x, y, str(label), ha='center', va='center', fontsize=12, zorder=5)
+            
+        # 5. Draw the confusion arrows
+        # Find the maximum off-diagonal value so we can scale the arrow thickness
+        off_diag_mask = ~np.eye(cm.shape[0], dtype=bool)
+        max_conf = np.max(cm[off_diag_mask]) if np.any(cm[off_diag_mask]) else 1
+
+        for i in range(10):
+            for j in range(10):
+                if i != j and cm[i, j] > 0:
+                    count = cm[i, j]
+                    x1, y1 = coords[i] # True position
+                    x2, y2 = coords[j] # Predicted position (where it was mistakenly placed)
+                    
+                    # Scale arrow thickness (linewidth) and opacity (alpha) based on error frequency
+                    lw = max(1, (count / max_conf) * 5)
+                    alpha = min(0.3 + (count / max_conf) * 0.7, 1.0)
+                    
+                    # Create a curved arrow so bidirectional confusions (i->j and j->i) don't overlap
+                    arrow = patches.FancyArrowPatch(
+                        (x1, y1), (x2, y2),
+                        connectionstyle="arc3,rad=0.15", 
+                        arrowstyle="->,head_length=8,head_width=4",
+                        color='red',
+                        linewidth=lw,
+                        alpha=alpha,
+                        shrinkA=15, # Leaves a gap so the arrow doesn't overlap the circle text
+                        shrinkB=15,
+                        zorder=3
+                    )
+                    ax.add_patch(arrow)
+                    
+        # 6. Formatting to match the physical aspect ratio
+        
+        ax.set_aspect('equal')
+        ax.set_xlim(-6, 6)
+        ax.set_ylim(-2, 6)
+        ax.axis('off')
+        plt.title(f'Spatial Error Map: {self.experiment_results["model_name"]}', fontsize=16, pad=15)
+        plt.tight_layout()
+        
+        return fig
 
 
     def generate_base_filename(self) -> str:
@@ -224,7 +336,7 @@ class MLTrainer:
             print("File not found:", model_filepath)
 
 
-    def save_submission(self, X_test: pd.DataFrame, test_ids: pd.Series = None) -> None:
+    def save_submission(self, X_test: pd.DataFrame) -> None:
         """
         Generates Kaggle predictions and uploads the CSV to W&B.
         """
@@ -240,11 +352,7 @@ class MLTrainer:
         print("Generating Kaggle predictions...")
         y_pred = self.best_model.predict(X_test)
 
-        # Use provided test IDs, or fallback to sequential IDs if not provided
-        if test_ids is not None:
-            submission_ids = test_ids.values
-        else:
-            submission_ids = range(len(y_pred))
+        submission_ids = np.arange(len(y_pred))
 
         submission = pd.DataFrame({
             "ID": submission_ids,
@@ -281,38 +389,35 @@ class SupervisedClusteringWrapper(BaseEstimator, ClassifierMixin):
         self.n_clusters = n_clusters
         self.label_map = {}
         
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> 'SupervisedClusteringWrapper':
-        '''
-        
-        '''
+    def fit(self, X, y):
+        y = pd.Series(y)
+
         if self.model_name == 'kmeans':
             self.model = make_pipeline(
-                PCA(n_components=20), 
-                KMeans(n_clusters=self.n_clusters, max_iter=300),
+                PCA(n_components=20),
+                KMeans(n_clusters=self.n_clusters, max_iter=300, random_state=42)
             )
         elif self.model_name == 'gmm':
             self.model = make_pipeline(
                 PCA(n_components=20),
-                GaussianMixture(n_components=self.n_clusters, max_iter=300)
+                GaussianMixture(n_components=self.n_clusters, max_iter=300, random_state=42)
             )
-            
+
         clusters = self.model.fit_predict(X)
-        
-        # Map unsupervised clusters to actual labels (y) based on majority vote
+
         for cluster_id in np.unique(clusters):
             true_labels = y[clusters == cluster_id]
+            true_labels = pd.Series(true_labels)
+
             if len(true_labels) > 0:
-                # Use value_counts().idxmax() for more robust label selection
                 self.label_map[cluster_id] = true_labels.value_counts().idxmax()
             else:
                 self.label_map[cluster_id] = 0
+
         return self
         
-    def predict(self, X: pd.DataFrame):
-        '''
-        
-        '''
+    def predict(self, X):
         clusters = self.model.predict(X)
-        # Map them back to correct labels
         return np.array([self.label_map[c] for c in clusters])
+
     

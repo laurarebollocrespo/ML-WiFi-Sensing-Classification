@@ -1,16 +1,16 @@
-#Data paths
-train_path: "data/processed/Xtrain_svm.csv"
-val_path: "data/processed/Xval_svm.csv"
-test_path: "data/processed/Xtest_svm.csv"
+# Robust scaling — RBF SVM on engineered WiFi features (CV F1 ~0.926 at C=15, gamma=0.0125)
+train_path: "data/processed/X_train_robust_scaled.csv"
+val_path: "data/processed/X_val_robust_scaled.csv"
+test_path: "data/processed/X_test_robust_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
 
-#Model
 model_name: "svm"
 target_col: "position"
 cv_folds: 5
 scoring: "f1_macro"
 
-#Parameters for GridSearchCV
 param_grid:
-  C: [15]
-  gamma: [0.0125]
   kernel: ["rbf"]
+  C: [10, 15, 20, 25, 50]
+  gamma: [0.01, 0.0125, 0.025, 'auto', 'scale']

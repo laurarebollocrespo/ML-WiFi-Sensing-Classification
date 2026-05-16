@@ -2,6 +2,7 @@
 main.py
 '''
 import click
+import pandas as pd
 from sklearn.base import BaseEstimator
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis, QuadraticDiscriminantAnalysis
 from sklearn.neighbors import KNeighborsClassifier
@@ -20,9 +21,8 @@ from sklearn.ensemble import (
 from sklearn.neural_network import MLPClassifier
 from sklearn.feature_selection import RFE
 
-# # XGBoost / LightGBM (if installed)
-# from xgboost import XGBClassifier
-# from lightgbm import LGBMClassifier
+from xgboost import XGBClassifier
+from lightgbm import LGBMClassifier
 import yaml
 from src.training import *
 
@@ -81,19 +81,13 @@ MODEL_REGISTRY = {
     "bagging": BaggingClassifier,
 
     # Boosting (external)
-    # "xgboost": XGBClassifier,
-    # "xgboost_gpu": lambda **params: XGBClassifier(
-    #     tree_method="gpu_hist",
-    #     predictor="gpu_predictor",
-    #     gpu_id=0,
-    #     **params
-    # ),
-    # "lightgbm": lambda: LGBMClassifier(
-    #     objective="multiclass",
-    #     random_state=42,
-    #     verbose=-1,
-    #     n_jobs=1,
-    # ),
+    "xgboost": XGBClassifier,
+    "lightgbm": lambda: LGBMClassifier(
+        objective="multiclass",
+        random_state=42,
+        verbose=-1,
+        n_jobs=-1,
+    ),
 
     # Neural Nets
     "mlp": MLPClassifier,
@@ -174,18 +168,18 @@ def run_training(config_path: str) -> None:
     )
 
     # Fit + search
-    trainer.fit_and_search(data["X_train"], data["y_train"])
+    trainer.fit_and_search(data["X_train"], data["y_train"].values.ravel())
 
     #evaluate
-    trainer.evaluate(data["X_val"], data["y_val"])
+    trainer.evaluate(data["X_val"], data["y_val"].values.ravel())
 
     trainer.save()
 
     # Refit on full data AFTER evaluation (metrics already logged)
-    trainer.refit_full(data["X_train_full_final"], data["y_train_full"])
+    trainer.refit_full(data["X_train_full_final"], data["y_train_full"].values.ravel())
 
     #5-Testing
-    trainer.save_submission(X_test=data["X_test"], test_ids=data["test_ids"])
+    trainer.save_submission(X_test=data["X_test"])
 
     print(f"Training completed. Model saved")  
 
