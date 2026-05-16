@@ -1,0 +1,16 @@
+# --- DATA SETTINGS ---
+# Assuming you want to use your fast, clean dataset from the RFE!
+data_path: "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col: "position"
+
+# --- TRAINING SETTINGS ---
+model_name: "kmeans"
+cv_folds: 3
+scoring: "f1_macro"
+
+# --- HYPERPARAMETERS ---
+param_grid:
+  # The wrapper will pass these down to the internal model.
+  # Testing over-clustering to let the wrapper map multiple groups to one label.
+  n_clusters: [50, 100, 150]

@@ -1,0 +1,16 @@
+#Data paths
+train_path: "data/processed/Xtrain_svm.csv"
+val_path: "data/processed/Xval_svm.csv"
+test_path: "data/processed/Xtest_svm.csv"
+
+#Model
+model_name: "svm"
+target_col: "position"
+cv_folds: 5
+scoring: "f1_macro"
+
+#Parameters for GridSearchCV
+param_grid:
+  C: [15]
+  gamma: [0.0125]
+  kernel: ["rbf"]

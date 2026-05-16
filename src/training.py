@@ -4,6 +4,7 @@ training.py
 import json
 from datetime import datetime
 import os
+import shutil
 
 import pandas as pd
 import numpy as np
@@ -16,8 +17,6 @@ from sklearn.metrics import ConfusionMatrixDisplay, accuracy_score, classificati
 from sklearn.pipeline import make_pipeline
 from sklearn.utils.parallel import Parallel, delayed
 import joblib
-import torch
-import torch
 import wandb
 import matplotlib.pyplot as plt
 
@@ -215,13 +214,17 @@ class MLTrainer:
 
         if os.path.exists(model_filepath):
             os.remove(model_filepath)
-            os.rmdir(models_dir)
+            # Only remove directory if it's empty; use shutil.rmtree if cleanup needed
+            try:
+                os.rmdir(models_dir)
+            except OSError:
+                pass  # Directory not empty or other error - that's fine
             print("Deleted:", model_filepath)
         else:
             print("File not found:", model_filepath)
 
 
-    def save_submission(self, X_test: pd.DataFrame) -> None:
+    def save_submission(self, X_test: pd.DataFrame, test_ids: pd.Series = None) -> None:
         """
         Generates Kaggle predictions and uploads the CSV to W&B.
         """
@@ -237,8 +240,14 @@ class MLTrainer:
         print("Generating Kaggle predictions...")
         y_pred = self.best_model.predict(X_test)
 
+        # Use provided test IDs, or fallback to sequential IDs if not provided
+        if test_ids is not None:
+            submission_ids = test_ids.values
+        else:
+            submission_ids = range(len(y_pred))
+
         submission = pd.DataFrame({
-            "ID": range(len(y_pred)),
+            "ID": submission_ids,
             "POSITION": y_pred.astype(int)
         })
 
@@ -293,7 +302,8 @@ class SupervisedClusteringWrapper(BaseEstimator, ClassifierMixin):
         for cluster_id in np.unique(clusters):
             true_labels = y[clusters == cluster_id]
             if len(true_labels) > 0:
-                self.label_map[cluster_id] = true_labels.mode()[0]
+                # Use value_counts().idxmax() for more robust label selection
+                self.label_map[cluster_id] = true_labels.value_counts().idxmax()
             else:
                 self.label_map[cluster_id] = 0
         return self

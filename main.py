@@ -20,10 +20,10 @@ from sklearn.ensemble import (
 from sklearn.neural_network import MLPClassifier
 from sklearn.feature_selection import RFE
 
-# XGBoost (if installed)
-from xgboost import XGBClassifier
+# # XGBoost / LightGBM (if installed)
+# from xgboost import XGBClassifier
+# from lightgbm import LGBMClassifier
 import yaml
-from src.preprocessing import *
 from src.training import *
 
 def build_stacking():
@@ -33,11 +33,11 @@ def build_stacking():
     '''
     return StackingClassifier(
         estimators=[
-            ('rf', RandomForestClassifier()),
-            ('svm', SVC(probability=True)), # Must keep probability=True to allow stacking!
-            ('xgb', XGBClassifier())
+            ('rf', RandomForestClassifier(random_state=42, n_jobs=-1)),
+            ('svm', SVC(probability=True, random_state=42)), # Must keep probability=True to allow stacking!
+            # ('xgb', XGBClassifier(random_state=42))
         ],
-        final_estimator=LogisticRegression(),
+        final_estimator=LogisticRegression(random_state=42),
         passthrough=True,
         n_jobs=-1,
         cv=3
@@ -47,17 +47,20 @@ def build_stacking():
 def build_voting():
     return VotingClassifier(
         estimators=[
-            ('rf', RandomForestClassifier()),
-            ('svm', SVC(probability=True)),
-            ('xgb', XGBClassifier())
+            ('rf', RandomForestClassifier(random_state=42, n_jobs=-1)),
+            ('svm', SVC(probability=True, random_state=42)),
+            # ('xgb', XGBClassifier(random_state=42))
         ],
-        voting='soft'
+        voting='soft',
+        n_jobs=-1
     )
 
 
-def build_rfe():
+def build_rfe(n_features=None):
     return RFE(
-        estimator=RandomForestClassifier(n_jobs=1),
+        estimator=RandomForestClassifier(random_state=42, n_jobs=-1),
+        n_features_to_select=n_features,  # None = select half, or specify number
+        step=1
     )
 
 
@@ -78,14 +81,19 @@ MODEL_REGISTRY = {
     "bagging": BaggingClassifier,
 
     # Boosting (external)
-    "xgboost": XGBClassifier,
-    "xgboost_gpu": lambda **params: XGBClassifier(
-        tree_method="gpu_hist",
-        predictor="gpu_predictor",
-        gpu_id=0,
-        **params
-    ),
-    # 
+    # "xgboost": XGBClassifier,
+    # "xgboost_gpu": lambda **params: XGBClassifier(
+    #     tree_method="gpu_hist",
+    #     predictor="gpu_predictor",
+    #     gpu_id=0,
+    #     **params
+    # ),
+    # "lightgbm": lambda: LGBMClassifier(
+    #     objective="multiclass",
+    #     random_state=42,
+    #     verbose=-1,
+    #     n_jobs=1,
+    # ),
 
     # Neural Nets
     "mlp": MLPClassifier,
@@ -114,30 +122,47 @@ def get_model(model_name: str) -> BaseEstimator:
     return model_class()
 
 
+def load_processed_data(train_path, val_path, test_path, y_train_path, y_val_path):
+    # Use semicolon separator to match how data is saved in datasets.py
+    X_train = pd.read_csv(train_path, sep=',')
+    X_val   = pd.read_csv(val_path, sep=',')
+    X_test  = pd.read_csv(test_path, sep=',')
+
+    y_train = pd.read_csv(y_train_path, sep=',')
+    y_val   = pd.read_csv(y_val_path, sep=',')
+    
+    return {
+        "X_train": X_train,
+        "y_train": y_train,
+        "X_val": X_val,
+        "y_val": y_val,
+        "X_train_full_final": pd.concat([X_train, X_val], axis=0, ignore_index=True),
+        "y_train_full": pd.concat([y_train, y_val], axis=0, ignore_index=True),
+        "X_test": X_test,
+    }
+
+
+
 def run_training(config_path: str) -> None:
 
-    #1-Loading
+
+    # Load config
     with open(config_path, "r") as file:
         config = yaml.safe_load(file)
 
     print(f"Loaded config from {config_path}")
     print(f"Model: {config['model_name']}")
-    
-    #2-Preprocessing
-    if config.get("is_clean_data", False) == True:
-        data = load_clean_data(
-            filepath_train=config["data_path"],
-            filepath_test=config["test_data_path"],
-            target_col=config["target_col"]
-        )
-    else:
-        data = preprocess_data(
-            filepath_train=config["data_path"],
-            filepath_test=config["test_data_path"],
-            target_col=config["target_col"]
-        )
-    
-    #3-Modeling
+
+    # Load processed CSVs
+    data = load_processed_data(
+        train_path=config["train_path"],
+        val_path=config["val_path"],
+        test_path=config["test_path"],
+        y_train_path=config["y_train_path"],
+        y_val_path=config["y_val_path"]
+    )
+
+    # Build model
     model = get_model(config["model_name"])
 
     trainer = MLTrainer(
@@ -145,12 +170,13 @@ def run_training(config_path: str) -> None:
         param_grid=config["param_grid"],
         cv_folds=config["cv_folds"],
         scoring=config["scoring"],
-        data=config["data_path"]
+        data=config["train_path"]
     )
 
+    # Fit + search
     trainer.fit_and_search(data["X_train"], data["y_train"])
 
-    #4-Evaluating
+    #evaluate
     trainer.evaluate(data["X_val"], data["y_val"])
 
     trainer.save()
@@ -159,7 +185,7 @@ def run_training(config_path: str) -> None:
     trainer.refit_full(data["X_train_full_final"], data["y_train_full"])
 
     #5-Testing
-    trainer.save_submission(X_test=data["X_test"])
+    trainer.save_submission(X_test=data["X_test"], test_ids=data["test_ids"])
 
     print(f"Training completed. Model saved")  
 

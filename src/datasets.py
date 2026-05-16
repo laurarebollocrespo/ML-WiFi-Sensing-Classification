@@ -10,21 +10,29 @@ def load_data(file_path, sep=';'):
 
 def remove_outliers_iqr(df, feature_cols):
     """Remove outliers using IQR method on each feature column."""
+    result = df.copy()
     for col in feature_cols:
-        if df[col].dtype in ['int64', 'float64']:
-            Q1 = df[col].quantile(0.25)
-            Q3 = df[col].quantile(0.75)
+        if result[col].dtype in ['int64', 'float64']:
+            Q1 = result[col].quantile(0.25)
+            Q3 = result[col].quantile(0.75)
             IQR = Q3 - Q1
             lower_bound = Q1 - 1.5 * IQR
             upper_bound = Q3 + 1.5 * IQR
-            df = df[(df[col] >= lower_bound) & (df[col] <= upper_bound)]
-    return df
+            result = result[(result[col] >= lower_bound) & (result[col] <= upper_bound)]
+    if len(result) == 0:
+        print(f"Warning: IQR outlier removal removed all rows! Returning original dataframe.")
+        return df
+    return result
 
 def remove_outliers_lof(df, feature_cols, contamination=0.1):
     """Remove outliers using Local Outlier Factor."""
     lof = LocalOutlierFactor(contamination=contamination)
     outliers = lof.fit_predict(df[feature_cols])
-    return df[outliers == 1]
+    result = df[outliers == 1]
+    if len(result) == 0:
+        print(f"Warning: LOF outlier removal removed all rows! Returning original dataframe.")
+        return df
+    return result
 
 def add_features(df):
     """Add new features: statistical measures of I/Q signals."""

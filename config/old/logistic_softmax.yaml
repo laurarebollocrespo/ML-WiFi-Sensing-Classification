@@ -1,0 +1,38 @@
+# ============================================================
+#  Logistic Regression  ≡  Softmax for multi-class
+#  solver='lbfgs'  → L2 only, good default for medium datasets
+#  solver='saga'   → supports L1, L2, ElasticNet, scales to large n
+#  multi_class='multinomial' → true softmax (one joint optimisation)
+#  C = 1/lambda  (larger C = less regularisation)
+# ============================================================
+
+data_path:      "data/raw/train_nt.csv"
+test_data_path: "data/raw/test_nolabels_nt.csv"
+target_col:     "position"
+test_size:      0.2
+
+add_magnitude_features: true
+use_pca:        false
+
+model_name: "logistic"
+cv_folds:   5
+scoring:    "f1_macro"
+
+param_grid:
+  # ---- L2 with lbfgs (fast, reliable) ----
+  - solver:      ['lbfgs']
+    penalty:     ['l2']
+    C:           [0.01, 0.1, 0.5, 1.0, 5.0, 10.0, 50.0]
+    max_iter:    [2000]
+
+  # ---- L1 / L2 / ElasticNet with saga (feature selection effect) ----
+  - solver:      ['saga']
+    penalty:     ['l1', 'l2']
+    C:           [0.01, 0.1, 1.0, 10.0]
+    max_iter:    [2000]
+
+  - solver:      ['saga']
+    penalty:     ['elasticnet']
+    C:           [0.1, 1.0, 10.0]
+    l1_ratio:    [0.2, 0.5, 0.8]   # 0=L2, 1=L1
+    max_iter:    [2000]
