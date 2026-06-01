@@ -1,0 +1,18 @@
+# Non-scaled — best val F1 ~0.92 on raw engineered features in prior runs
+train_path: "data/processed/X_train_non_scaled.csv"
+val_path: "data/processed/X_val_non_scaled.csv"
+test_path: "data/processed/X_test_non_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+model_name: "extra_trees"
+target_col: "position"
+cv_folds: 5
+scoring: "f1_macro"
+
+param_grid:
+  n_estimators: [300, 500, 800]
+  max_depth: [null, 20, 30, 50]
+  min_samples_split: [2, 5, 10]
+  max_features: ["sqrt", "log2"]
+  bootstrap: [false]

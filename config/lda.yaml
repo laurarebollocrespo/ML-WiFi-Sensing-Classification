@@ -1,0 +1,14 @@
+# Standard scaling — LDA assumes Gaussian features with comparable variance
+train_path: "data/processed/X_train_standard_scaled.csv"
+val_path: "data/processed/X_val_standard_scaled.csv"
+test_path: "data/processed/X_test_standard_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+model_name: "lda"
+cv_folds: 5
+scoring: "f1_macro"
+
+param_grid:
+  solver: ["lsqr", "eigen"]
+  shrinkage: [null, "auto", 0.1, 0.5, 0.9]

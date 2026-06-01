@@ -1,0 +1,17 @@
+# Data settings
+data_path: "data/processed/train_features.csv"
+test_data_path: "data/processed/test_features.csv"
+target_col: "position"
+test_size: 0.2
+models_dir: "outputs/models"
+experiments_dir: "outputs/experiments"
+submissions_dir: "outputs/submissions"
+
+# Training settings
+model_name: "qda"
+cv_folds: 5
+scoring: "f1_macro"
+
+# Hyperparameter Search Space
+param_grid:
+  reg_param: [0.0, 0.1, 0.5, 0.9] # Regularization is key for high-dimensional QDA

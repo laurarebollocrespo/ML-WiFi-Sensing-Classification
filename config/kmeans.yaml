@@ -1,0 +1,14 @@
+# Robust scaling — clustering pipeline uses PCA on normalized features
+train_path: "data/processed/X_train_robust_scaled.csv"
+val_path: "data/processed/X_val_robust_scaled.csv"
+test_path: "data/processed/X_test_robust_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+model_name: "kmeans"
+target_col: "position"
+cv_folds: 5
+scoring: "f1_macro"
+
+param_grid:
+  n_clusters: [10, 15, 20, 30]
