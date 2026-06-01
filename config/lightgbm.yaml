@@ -1,0 +1,19 @@
+# Non-scaled — tree models are scale-invariant; matches CatBoost/LightGBM EDA setup
+train_path: "data/processed/X_train_non_scaled.csv"
+val_path: "data/processed/X_val_non_scaled.csv"
+test_path: "data/processed/X_test_non_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+model_name: "lightgbm"
+target_col: "position"
+cv_folds: 5
+scoring: "f1_macro"
+
+param_grid:
+  boosting_type: ["gbdt", "dart"]
+  num_leaves: [31, 50, 70]
+  max_depth: [6, 8, 10]
+  learning_rate: [0.05, 0.1]
+  feature_fraction: [0.7, 0.9]
+  n_estimators: [300, 500, 800]

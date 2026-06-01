@@ -1,0 +1,15 @@
+# Non-scaled — AdaBoost with decision stumps/trees on raw features
+train_path: "data/processed/X_train_non_scaled.csv"
+val_path: "data/processed/X_val_non_scaled.csv"
+test_path: "data/processed/X_test_non_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+model_name: "ada_boost"
+target_col: "position"
+cv_folds: 5
+scoring: "f1_macro"
+
+param_grid:
+  n_estimators: [100, 200, 500]
+  learning_rate: [0.05, 0.1, 0.5, 1.0]

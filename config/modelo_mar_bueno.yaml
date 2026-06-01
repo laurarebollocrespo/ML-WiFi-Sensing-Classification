@@ -1,0 +1,17 @@
+# Tuned SVM — robust scaled engineered features (best validated SVM setup)
+train_path: "data/processed/X_train_robust_scaled.csv"
+val_path: "data/processed/X_val_robust_scaled.csv"
+test_path: "data/processed/X_test_robust_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+model_name: "svm"
+cv_folds: 5
+scoring: "f1_macro"
+
+
+# Hyperparameter Search Space
+param_grid:
+  kernel: ['rbf']
+  C: [15]          # Setting the optimal C directly
+  gamma: [0.0125]  # Setting the optimal gamma directly

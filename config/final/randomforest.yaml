@@ -1,0 +1,16 @@
+train_path: "data/processed/X_train_non_scaled.csv"
+val_path: "data/processed/X_val_non_scaled.csv"
+test_path: "data/processed/X_test_non_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+target_col: "position"
+test_size:  0.2
+
+model_name: "random_forest"
+cv_folds:   5
+scoring:    "f1_macro"
+
+param_grid:
+    n_estimators: [100, 200]
+    max_depth:    [None, 20]

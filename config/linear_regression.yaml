@@ -1,0 +1,15 @@
+train_path: "data/processed/X_train_standard_scaled.csv"
+val_path: "data/processed/X_val_standard_scaled.csv"
+test_path: "data/processed/X_test_standard_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+target_col: "position"
+test_size:  0.2
+
+model_name: "linear_regression"
+cv_folds:   3
+scoring:    "f1_macro"
+
+param_grid:
+  - alpha: [0.5, 1.0, 10] # Standard regularization

@@ -1,0 +1,18 @@
+# Non-scaled — sklearn GBDT on raw feature magnitudes
+train_path: "data/processed/X_train_non_scaled.csv"
+val_path: "data/processed/X_val_non_scaled.csv"
+test_path: "data/processed/X_test_non_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+model_name: "gradient_boosting"
+target_col: "position"
+cv_folds: 5
+scoring: "f1_macro"
+
+param_grid:
+  n_estimators: [100, 200, 300]
+  learning_rate: [0.05, 0.1, 0.15]
+  max_depth: [3, 5, 7]
+  min_samples_split: [2, 5, 10]
+  subsample: [0.8, 1.0]

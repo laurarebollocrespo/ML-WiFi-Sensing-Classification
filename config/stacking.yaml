@@ -1,0 +1,15 @@
+# Robust scaling — meta-learner over RF + SVM (SVM requires scaling)
+train_path: "data/processed/X_train_robust_scaled.csv"
+val_path: "data/processed/X_val_robust_scaled.csv"
+test_path: "data/processed/X_test_robust_scaled.csv"
+y_train_path: "data/processed/y_train.csv"
+y_val_path: "data/processed/y_val.csv"
+
+model_name: "stacking"
+target_col: "position"
+cv_folds: 3
+scoring: "f1_macro"
+
+param_grid:
+  final_estimator__C: [0.1, 1.0, 10.0]
+  final_estimator__max_iter: [1000]
