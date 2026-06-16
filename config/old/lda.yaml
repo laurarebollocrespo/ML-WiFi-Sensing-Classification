@@ -6,10 +6,10 @@ test_size: 0.2
 
 # Training settings
 model_name: "lda"
-cv_folds: 5
+cv_folds: 1
 scoring: "f1_macro"
 
 # Hyperparameter Search Space
 param_grid:
   solver: ['lsqr']
-  shrinkage: [null, 'auto', 0.1, 0.5, 0.9]
+  shrinkage: ['None']

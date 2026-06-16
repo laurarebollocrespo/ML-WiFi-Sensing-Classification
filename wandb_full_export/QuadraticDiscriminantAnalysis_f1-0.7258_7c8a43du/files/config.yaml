@@ -1,0 +1,59 @@
+_wandb:
+    value:
+        cli_version: 0.26.1
+        e:
+            ymxsngtqfzfrik5y7tpk6m537bi6pves:
+                args:
+                    - train
+                    - .\config\qda.yaml
+                codePath: main.py
+                codePathLocal: main.py
+                cpu_count: 10
+                cpu_count_logical: 16
+                disk:
+                    /:
+                        total: "1021821579264"
+                        used: "250940518400"
+                email: laura.rebollo.crespo@estudiantat.upc.edu
+                executable: C:\Users\laura\Desktop\UNI\Q4\AA1\ML-WiFi-Sensing-Classification\.venv\Scripts\python.exe
+                git:
+                    commit: a218373eef51800880fd08ed4e5d214328cab1f5
+                    remote: https://github.com/laurarebollocrespo/ML-WiFi-Sensing-Classification.git
+                host: DESKTOP-M6J13KT
+                memory:
+                    total: "33818390528"
+                os: Windows-11-10.0.26200-SP0
+                program: C:\Users\laura\Desktop\UNI\Q4\AA1\ML-WiFi-Sensing-Classification\main.py
+                python: CPython 3.13.13
+                root: C:\Users\laura\Desktop\UNI\Q4\AA1\ML-WiFi-Sensing-Classification
+                startedAt: "2026-05-11T11:31:10.393648Z"
+                writerId: ymxsngtqfzfrik5y7tpk6m537bi6pves
+        m: []
+        python_version: 3.13.13
+        t:
+            "1":
+                - 5
+                - 6
+                - 53
+            "2":
+                - 5
+                - 6
+                - 53
+            "3":
+                - 2
+                - 13
+                - 16
+            "4": 3.13.13
+            "5": 0.26.1
+            "8":
+                - 3
+            "12": 0.26.1
+            "13": windows-amd64
+cv_folds:
+    value: 5
+model_name:
+    value: QuadraticDiscriminantAnalysis
+reg_param:
+    value: 0.5
+scoring_metric:
+    value: f1_macro

@@ -1,0 +1,27 @@
+{
+    "id": "g9f2a6s8",
+    "name": "SupervisedClusteringWrapper_f1-0.2495",
+    "state": "finished",
+    "url": "https://wandb.ai/laura-rebollo-crespo-universitat-polit-cnica-de-catalunya/AA1/runs/g9f2a6s8",
+    "tags": [],
+    "notes": null,
+    "created_at": "2026-05-11T14:17:23Z",
+    "config": {
+        "cv_folds": 3,
+        "model_name": "SupervisedClusteringWrapper",
+        "n_clusters": 15,
+        "scoring_metric": "f1_macro"
+    },
+    "summary": {
+        "_runtime": 139,
+        "_step": 0,
+        "_timestamp": 1778509044.922717,
+        "_wandb": "{'runtime': 139}",
+        "classification_report": "{'_type': 'html-file', 'path': 'media/html/classification_report_0_abbee6f8ccb9931a4ac0.html', 'sha256': 'abbee6f8ccb9931a4ac07501fe42ddd09d89b2c8caed10023b75bf1f1d0b1b15', 'size': 890}",
+        "scikit_learn_matrix": "{'_type': 'image-file', 'format': 'png', 'height': 800, 'path': 'media/images/scikit_learn_matrix_0_76140b58800ddead2c99.png', 'sha256': '76140b58800ddead2c991ada741878d87ea1086284dcadc9421aa0f062e4410e', 'size': 40657, 'width': 1000}",
+        "val_accuracy": 0.31691233514352213,
+        "val_f1_macro": 0.24949334298409748,
+        "val_precision_macro": 0.30853061956731176,
+        "val_recall_macro": 0.31901425416594487
+    }
+}
