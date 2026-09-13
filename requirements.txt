@@ -11,3 +11,5 @@ wandb>=0.13.0
 imbalanced-learn>=0.10.0
 joblib>=1.2.0
 autogluon.tabular>=1.5.0
+torch>=2.2.0
+tabpfn-client>=0.1.0

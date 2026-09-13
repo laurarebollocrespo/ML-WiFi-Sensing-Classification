@@ -1,121 +1,116 @@
-# Machine Learning-Based Classification of Wi-Fi Device Locations
+# Wi-Fi Device Localization with Machine Learning
 
-## Project Overview
+## Overview
 
-This repository contains a comprehensive machine learning framework designed to solve an advanced indoor localization problem using Wi-Fi Channel State Information (CSI). The project maps raw, high-dimensional radio-frequency signals (CSI) to 10 distinct physical locations on a defined grid.
+This repository contains a machine learning workflow for indoor localization using Wi-Fi Channel State Information (CSI). The objective is to distinguish among 10 spatial locations by learning from radio measurements affected by multipath propagation, phase noise, and hardware distortions.
 
-This solution was developed as part of a Kaggle InClass competition for the Machine Learning course at the Universitat Politècnica de Catalunya (UPC), mimicking the capabilities of the emerging IEEE 802.11bf wireless sensing standard. The repository demonstrates a complete end-to-end ML lifecycle: from exploratory signal analysis and physics-aware feature engineering to advanced ensembling, AutoML integration, and robust experiment tracking.
+The project was developed in the context of the Aprenentatge Automàtic 1 course at Universitat Politècnica de Catalunya (UPC) and was awarded first absolute place in the competition “Locating a WiFi Device from the Channel State Information”.
 
-## The Challenge & Dataset
+## Challenge and dataset
 
-The core challenge is a **10-class classification problem**. The dataset consists of 12,888 CSI snapshots capturing Wi-Fi packets transmitted between a tracking unit and a mobile device.
+The task is a 10-class classification problem. The dataset is composed of CSI snapshots captured from Wi-Fi packets transmitted between a tracking device and a mobile device, with measurements collected across multiple angular orientations and radial distances.
 
-* **Target Classes:** 10 physical locations. Measurements were taken at 5 angular orientations (-90°, -45°, 0°, +45°, +90°) and 2 radial distances (2m and 5m).
-* **Raw Data:** The raw data (262 columns) primarily includes the In-phase (I) and Quadrature (Q) components of an Orthogonal Frequency Division Multiplexing (OFDM) signal across 64 subcarriers for two receiving antennas, along with hardware RSSI (Received Signal Strength Indicator) values.
-* **The Complexity:** Raw CSI data is heavily distorted by multipath propagation (reflections, scattering, NLoS fading) and hardware imperfections (Sampling Frequency Offset and Phase Noise), making spatial boundaries highly non-linear.
+The raw data include high-dimensional signal features such as in-phase and quadrature components across subcarriers and antennas, as well as RSSI values. These features are highly affected by non-linear propagation effects and hardware-induced distortions, which makes the classification task challenging and well-suited for signal-processing-aware model design.
 
-## Methodology & Architecture
+## Methodology
 
-The project is structured to overcome the physical distortions in the dataset through rigorous feature engineering and robust modeling strategies.
+The project follows a complete ML pipeline from raw signal understanding to final prediction export.
 
-### 1. Feature Engineering & Signal Processing
+### 1. Exploratory analysis
 
-Because raw I/Q variables are mathematically sensitive to absolute phase rotation and oscillator drift, they perform poorly when fed directly into models. The `PREPROCESSING.ipynb` pipeline transforms these signals into physically meaningful metrics:
+The repository starts with exploratory analysis of signal behavior, outliers, correlations, and the spatial structure of the target classes.
 
-* **Sanitized Phase & Angle of Arrival (AoA):** Unwraps the phase across subcarriers and removes the linear SFO trend to compute stable inter-antenna phase differences and a clean AoA proxy.
-* **Spectral Analysis (FFT):** Applies Fast Fourier Transforms to amplitude vectors to extract:
-* *Spectral Energy:* Correlates strongly with radial distance.
-* *Spectral Entropy:* Differentiates between clear line-of-sight paths (low entropy) and heavily scattered, multipath environments (high entropy).
-* *Spectral Centroid:* Reflects shifts in the channel's delay spread.
+### 2. Feature engineering and preprocessing
 
+Several transformations are applied to improve the information content of the input features, including:
 
+- phase sanitization and angle-related feature extraction
+- spectral analysis using FFT-derived descriptors
+- feature normalization and robust scaling strategies for different model families
 
-### 2. Multi-Representation Scaling
+### 3. Model comparison
 
-Different machine learning algorithms possess fundamentally different geometric assumptions. To accommodate this, the pipeline generates four variations of the dataset:
+The project evaluates a broad set of algorithms, including:
 
-* **Non-Scaled:** Preserved for tree-based models (Random Forest, XGBoost) to maintain physical interpretability.
-* **StandardScaled ($Z$-Score):** Applied for distance-based non-parametric models (KNN) to prevent variables with massive ranges from dominating Euclidean calculations.
-* **RobustScaled (Median/IQR):** Utilized for Support Vector Machines (SVM) and Multi-Layer Perceptrons (MLP) to stabilize margin maximization and gradient descent against the extreme multipath fading outliers identified during EDA.
+- logistic regression and discriminant methods
+- nearest-neighbor methods
+- SVMs
+- tree-based and ensemble models
+- gradient boosting methods
+- XGBoost and LightGBM
+- AutoGluon
+- TabPFN
+- voting and stacking classifiers
 
-### 3. Algorithm Exploration
+### 4. Experiment tracking
 
-The repository systematically evaluates 96 model configurations across 41 algorithm families:
+Experiments are tracked using Weights & Biases, with logs for validation metrics, confusion matrices, classification reports, and model artifacts.
 
-* **Rejected Baselines:** Unsupervised density clustering (K-Means, HDBSCAN) and linear discriminants (LDA, QDA) are proven ineffective due to the non-linear, non-Gaussian nature of the multipath geometry.
-* **Core Supervised Learning (`main.py`):** Comprehensive grid searches over Logistic Regression, SVMs, Random Forests, and Gradient Boosting machines.
-* **Advanced Architectures (`non_sklear_models.ipynb`):** Integration of GPU-accelerated XGBoost, LightGBM, 1D Convolutional Neural Networks (1D-CNN) for ordered subcarrier extraction, AutoGluon (AutoML multi-layer stacking), and TabPFN (a prior-data fitted Transformer network).
-
-### 4. Advanced Ensembling (`ensembles.ipynb`)
-
-To push performance boundaries, the project implements complex meta-learners:
-
-* **Parallel Variance Reduction:** Bagging and Extra Trees.
-* **Voting Classifiers:** Soft and Hard voting protocols, utilizing SLSQP optimization to derive optimal weights for base learner probabilities.
-* **Feature-Augmented Stacking:** A custom pipeline where a meta-classifier (LightGBM) is trained not only on the out-of-fold probability vectors of base models but also retains access to the raw 146 spatial features, allowing it to contextualize base-learner uncertainty against physical realities.
-
-## Repository Organization
+## Repository structure
 
 ```text
 ML-WiFi-Sensing-Classification/
-├── data/
-│   ├── raw/                  # Original train/test datasets (ignored in git)
-│   └── processed/            # Engineered and scaled datasets
-├── notebooks/
-│   ├── EDA.ipynb                     # Exploratory Data Analysis (Outliers, Correlation, Variance)
-│   ├── PREPROCESSING.ipynb           # Feature Extraction & Scaling Pipeline
-│   ├── non_parametric_models.ipynb   # KNN, Parzen Windows evaluation
-│   ├── non_sklear_models.ipynb       # TabPFN, XGBoost, AutoGluon, 1D-CNN
-│   ├── unsupervised_models.ipynb     # Clustering baselines & SupervisedWrapper
-│   ├── ensembles.ipynb               # Voting, Stacking, Feature-Augmented architectures
-│   └── export_wandb.ipynb            # Utility to download/parse W&B logs to JSON
+├── README.md
+├── requirements.txt
+├── main.py
+├── .gitignore
+├── config/
+│   ├── final/
+│   ├── old/
+│   └── ...
 ├── src/
-│   └── training.py           # Core MLTrainer class (CV, W&B integration, Metrics)
-├── main.py                   # CLI tool for automated model training and hyperparameter search
-├── requirements.txt          # Python dependencies
-└── README.md
-
+│   └── training.py
+├── notebooks/
+│   ├── EDA.ipynb
+│   ├── PREPROCESSING.ipynb
+│   ├── non_parametric_models.ipynb
+│   ├── non_sklear_models.ipynb
+│   ├── unsupervised_models.ipynb
+│   ├── ensembles.ipynb
+│   └── export_wandb.ipynb
+├── data/
+│   ├── raw/
+│   └── processed/
+└── .venv/
 ```
 
-## Experiment Tracking
+## Award
 
-Every experiment, hyperparameter iteration, and model evaluation is rigorously tracked using the **Weights & Biases (W&B)** API. The custom `MLTrainer` class automatically logs:
+This project was awarded first absolute place in the machine learning competition organized for the students of the Aprenentatge Automàtic 1 course of the Bachelor Degree in Data Science and Engineering at Universitat Politècnica de Catalunya – BarcelonaTech during the 2025–2026 academic year.
 
-* Macro F1-score, Precision, Recall, and Accuracy.
-* Model artifacts (saved `.pkl` files).
-* Visualizations including Confusion Matrices and custom Spatial Error Maps.
+## Local setup
 
-## How to Run the Code
+### 1. Create and activate a virtual environment
 
-### 1. Setup Environment
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
 
-Ensure you have Python 3.10+ installed. Install the required dependencies:
+### 2. Install dependencies
 
 ```bash
 pip install -r requirements.txt
-
 ```
 
-### 2. Configure Tracking
-
-Authenticate with Weights & Biases to enable experiment logging:
+### 3. Authenticate with Weights & Biases
 
 ```bash
 wandb login
-
 ```
 
-### 3. Data Processing
-
-Run all cells in `notebooks/PREPROCESSING.ipynb` to transform the raw data into the necessary engineered `.csv` files within the `data/processed/` directory.
-
-### 4. Train Models
-
-Execute the CLI tool to train standard baselines (ensure you have a `model.yaml` specifying your parameters):
+### 4. Run training
 
 ```bash
-python main.py train config/model.yaml
-
+python main.py train config/final/<model_config>.yaml
 ```
 
-For advanced models (TabPFN, AutoGluon) and ensembles, utilize the respective Jupyter Notebooks in the `notebooks/` directory.
+For exploratory work and advanced experiments, refer to the notebooks in the `notebooks/` folder.
+
+## Notes
+
+The project is intended as a reproducible academic and applied machine learning workflow.
+
+## Acknowledgements
+
+We would like to thank the AA1 teaching staff and the competition organizers for the opportunity and support throughout the project.

@@ -1,5 +1,8 @@
 # Python
 __pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 *.py[cod]
 *$py.class
 *.so
@@ -26,26 +29,34 @@ venv/
 ENV/
 env/
 
-# IDE
+# IDE and editor files
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
-.DS_Store
+*.code-workspace
 
 # Jupyter
 .ipynb_checkpoints/
 *.ipynb_checkpoints
 
-# Logs
+# Logs and experiment tracking
 *.log
 logs/
 wandb/
+mlruns/
 
 # OS
 .DS_Store
 Thumbs.db
 
+# Generated model/artifact files
 *.pkl
 artifacts/
+models/
+
+# Data outputs often kept local only
+# Uncomment only if you truly do not want these tracked
+# data/raw/
+# data/processed/
